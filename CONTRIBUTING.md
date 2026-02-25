@@ -10,12 +10,14 @@ Team Forest, CIS3750 W26.
 - [Merge Requests](#merge-requests)
 - [Code Style](#code-style)
 - [Testing](#testing)
+- [Makefile](#makefile)
 - [Complete Workflow Example](#complete-workflow-example)
 
 ## Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) (v24+)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
 - [Git](https://git-scm.com/)
+- [API Token](https://data.cityofnewyork.us)
 
 ## Getting Started
 1. Clone the repository
@@ -25,18 +27,15 @@ Team Forest, CIS3750 W26.
    cd 311-complaint-patterns-and-response-times
 ```
 
-2. Build and start all services
-```bash
-   docker compose up --build
+2. Setup API token and .env
 ```
-   > Use `-d` to run in detached (background) mode:
-```bash
-   docker compose up --build -d
+1. Register for a API token at https://data.cityofnewyork.us
+2. Copy the root `.env.example` to `.env` and fill in your token and database info (for local dev)
 ```
 
-3. Verify containers are running
+3. Build and start all services
 ```bash
-   docker compose ps
+   docker compose up --build -d
 ```
 
 4. View logs (if running detached)
@@ -283,9 +282,9 @@ All of the following must pass in the pipeline before an MR can be merged:
 | Check | Language | Command |
 | :---- | :------- | :------ |
 | ESLint | JavaScript / TypeScript | `npm run lint` |
-| Prettier | JavaScript / TypeScript | `npm run format` |
+| Prettier | JavaScript / TypeScript | `npm run format:check` |
 | Black | Python | `black --check .` |
-| Checkstyle | Java | `mvn checkstyle:check` |
+| Checkstyle | Java | `./gradlew checkstyleMain` |
 
 > If CI fails on a style check, fix it locally and push again.
 
@@ -299,6 +298,10 @@ All new features must include tests. Tests must pass in CI before an MR can be m
 
 Make sure your containers are running before executing any tests:
 ```bash
+# via make
+make up
+
+# via docker compose
 docker compose up -d
 ```
 
@@ -306,8 +309,8 @@ docker compose up -d
 
 ### Java — JUnit (backend)
 ```bash
-# run all Java tests
-docker compose exec backend ./gradlew test
+# run all Java tests via make
+make test-backend
 
 # run with coverage report
 docker compose exec backend ./gradlew test jacocoTestReport
@@ -319,21 +322,27 @@ Coverage report output: `build/reports/jacoco/test/html/index.html`
 
 ### Python — Pytest (python)
 ```bash
-# run all Python tests
-docker compose exec python pytest
+# run all Python tests via make
+make test-ingestor
+
+# run all Python tests via docker compose
+docker compose exec ingestor pytest
 
 # run with coverage report
-docker compose exec python pytest --cov=. --cov-report=term-missing
+docker compose exec ingestor pytest --cov=. --cov-report=term-missing
 
 # run a specific test file
-docker compose exec python pytest tests/test_complaints.py
+docker compose exec ingestor pytest tests/test_complaints.py
 ```
 
 ---
 
 ### Frontend — Vitest + MSW (frontend)
 ```bash
-# run all frontend tests
+# run all frontend tests via make
+make test-frontend
+
+# run all frontend tests via docker compose
 docker compose exec frontend npm test
 
 # run in watch mode during development
@@ -359,8 +368,12 @@ server.use(
 
 ### Run All Tests
 ```bash
+# run all tests via make
+make test
+
+# run all tests via docker compose
 docker compose exec backend ./gradlew test & \
-docker compose exec python pytest & \
+docker compose exec ingestor pytest & \
 docker compose exec frontend npm test
 ```
 
@@ -384,6 +397,10 @@ docker compose exec frontend npm test
 - Mock only at the boundary (API layer, DB layer)
 - Test files must live next to the code they test
 
+## Makefile
+
+Type make to get a full list of options
+
 ## Complete Workflow Example
 
 Start to finish.
@@ -405,24 +422,37 @@ git checkout -b feature/complaints-filter-by-date
 
 **3. Start your containers**
 ```bash
+# via make
+make up
+
+# via docker compose
 docker compose up -d
 ```
 
 **4. Make your changes, then run linting**
 ```bash
-# JS / TS
+# via make
+make lint
+
+# via docker compose
+
+## JS / TS
 docker compose exec frontend npm run lint:fix
 docker compose exec frontend npm run format
 
-# python
+## python
 docker compose exec python black .
 
-# java
+## java
 docker compose exec backend ./gradlew checkstyleMain
 ```
 
 **5. Run all tests**
 ```bash
+# via make
+make test
+
+# via docker compose
 docker compose exec backend ./gradlew test & \
 docker compose exec python pytest & \
 docker compose exec frontend npm test
