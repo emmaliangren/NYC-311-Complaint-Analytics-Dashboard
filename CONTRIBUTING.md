@@ -234,9 +234,7 @@ black --check .
 Config file: `pyproject.toml`
 
 Key rules:
-- 4 space indentation
-- Max line length: 88 characters (Black default)
-- Double quotes for strings (Black enforces this)
+- Max line length: 88 characters
 - One import per line
 
 ---
@@ -441,7 +439,7 @@ docker compose exec frontend npm run lint:fix
 docker compose exec frontend npm run format
 
 ## python
-docker compose exec python black .
+docker compose exec ingestor black .
 
 ## java
 docker compose exec backend ./gradlew checkstyleMain
@@ -454,7 +452,7 @@ make test
 
 # via docker compose
 docker compose exec backend ./gradlew test & \
-docker compose exec python pytest & \
+docker compose exec ingestor pytest & \
 docker compose exec frontend npm test
 ```
 
