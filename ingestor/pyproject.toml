@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["*_test.py"]
+python_functions = ["test_*"]
+
+[tool.black]
+line-length = 88

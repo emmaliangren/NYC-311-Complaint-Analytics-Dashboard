@@ -1,0 +1,79 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: build
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    command: sh -c "npm run dev -- --host"
+
+  backend:
+    build:
+      context: ./backend
+      target: build
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/devdb
+      SPRING_DATASOURCE_USERNAME: dev
+      SPRING_DATASOURCE_PASSWORD: dev
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_SHOW_SQL: "true"
+    volumes:
+      - ./backend:/workspace
+    working_dir: /workspace
+    entrypoint: []
+    command: sh -c "chmod +x gradlew && ./gradlew bootRun --no-daemon"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ingestor:
+    build: ./ingestor
+    ports:
+      - "8001:8001"
+    environment:
+      NYC_API_BASE_URL: https://data.cityofnewyork.us/resource/erm2-nwe9.json
+      NYC_APP_TOKEN: ${NYC_APP_TOKEN}
+      BATCH_SIZE: 1000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: devdb
+      DB_USER: dev
+      DB_PASSWORD: dev
+      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:-300}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:11
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: devdb
+      MARIADB_USER: dev
+      MARIADB_PASSWORD: dev
+    volumes:
+      - dev_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dev_data:
