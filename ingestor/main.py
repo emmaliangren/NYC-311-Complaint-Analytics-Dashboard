@@ -17,9 +17,7 @@ def fetch(offset: int = 0, limit: int = 1000) -> list[dict]:
     params = {"$limit": limit, "$offset": offset}
 
     for attempt in range(MAX_RETRIES):
-        response = requests.get(
-            ENDPOINTS["complaints"], headers=headers, params=params
-        )
+        response = requests.get(ENDPOINTS["complaints"], headers=headers, params=params)
 
         if response.status_code == HTTP["ok"]["code"]:
             return response.json()
