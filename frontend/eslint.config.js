@@ -15,7 +15,7 @@ export default [
       "dist/**",
       "**/*.config.js",
       "**/*.config.ts",
-      "**/.react-router/**/"
+      "**/.react-router/**/",
     ],
   },
   js.configs.recommended,
