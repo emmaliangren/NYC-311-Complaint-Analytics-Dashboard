@@ -5,7 +5,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [reactRouter(), tailwindcss(), tsconfigPaths()],
+  plugins: [!process.env.VITEST && reactRouter(), tailwindcss(), tsconfigPaths()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -18,7 +18,7 @@ export default defineConfig({
     hmr: { host: "localhost", port: 3000 },
     proxy: {
       "/api": {
-        target: process.env.VITE_BACKEND_URL || "http://localhost:8080",
+        target: process.env.VITE_BACKEND_URL || "http://backend:8080",
         changeOrigin: true,
       },
     },
