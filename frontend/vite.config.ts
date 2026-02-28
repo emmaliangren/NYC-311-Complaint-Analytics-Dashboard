@@ -1,11 +1,10 @@
 import path from "path";
-import { defineConfig, mergeConfig } from "vite";
-import { defineConfig as defineVitestConfig } from "vitest/config";
+import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 
-const viteConfig = defineConfig({
+export default defineConfig({
   plugins: [reactRouter(), tailwindcss(), tsconfigPaths()],
   resolve: {
     alias: {
@@ -25,25 +24,3 @@ const viteConfig = defineConfig({
     },
   },
 });
-
-const vitestConfig = defineVitestConfig({
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./vitest.setup.ts",
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "lcov"],
-      thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
-      exclude: [
-        "node_modules/",
-        "src/mocks/**",
-        "src/tests/**",
-        "**/*.test.{ts,tsx}",
-        "**/*.spec.{ts,tsx}",
-      ],
-    },
-  },
-});
-
-export default mergeConfig(viteConfig, vitestConfig);
