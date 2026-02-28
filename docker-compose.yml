@@ -24,8 +24,8 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/devdb
-      SPRING_DATASOURCE_USERNAME: dev
-      SPRING_DATASOURCE_PASSWORD: dev
+      SPRING_DATASOURCE_USERNAME: ${DB_NAME:?DB_NAME is required}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
       SPRING_JPA_SHOW_SQL: "true"
     volumes:
@@ -45,13 +45,13 @@ services:
     environment:
       NYC_API_BASE_URL: https://data.cityofnewyork.us/resource/erm2-nwe9.json
       NYC_APP_TOKEN: ${NYC_APP_TOKEN}
+      DB_HOST: ${DB_HOST:?DB_HOST is required}
+      DB_PORT: ${DB_PORT:?DB_PORT is required}
+      DB_NAME: ${DB_NAME:?DB_NAME is required}
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       BATCH_SIZE: 1000
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_NAME: devdb
-      DB_USER: dev
-      DB_PASSWORD: dev
-      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:-300}
+      REFRESH_INTERVAL_SECONDS: 300
     depends_on:
       db:
         condition: service_healthy
@@ -62,10 +62,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_DATABASE: devdb
-      MARIADB_USER: dev
-      MARIADB_PASSWORD: dev
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MARIADB_USER: ${DB_USER:?DB_USER is required}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - dev_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
