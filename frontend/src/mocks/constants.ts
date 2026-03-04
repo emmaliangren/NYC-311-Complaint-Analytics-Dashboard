@@ -1,9 +1,10 @@
-import type { GeoPoint } from "@/types/GeoPoint";
+import type { GeoPoint, DataRefresh } from "@/types/geo";
 import type { HealthCheck, ServiceStatus, HttpLabel, HttpCode } from "../types/api";
 
 export const ENDPOINTS = {
   health: "/api/health",
-  geoPoints: "/api/points",
+  geoPoints: "/api/complaints/geo/points",
+  lastRefresh: "/api/complaints/geo/last-refresh",
 } as const;
 
 export const FIXTURES = {
@@ -14,25 +15,33 @@ export const FIXTURES = {
   geoPoints: {
     ok: [
       {
-        id: "1",
-        lat: 40.7128,
-        lng: -74.006,
+        uniqueKey: "1",
+        latitude: 40.7128,
+        longitude: -74.006,
         complaintType: "Noise",
         borough: "Manhattan",
-        date: "2025-03-01",
+        createdDate: "2025-03-01",
         status: "Open",
       },
       {
-        id: "2",
-        lat: 40.6782,
-        lng: -73.9442,
+        uniqueKey: "2",
+        latitude: 40.6782,
+        longitude: -73.9442,
         complaintType: "Pothole",
         borough: "Brooklyn",
-        date: "2025-03-02",
+        createdDate: "2025-03-02",
         status: "Closed",
       },
     ] satisfies GeoPoint[],
     empty: [] as GeoPoint[],
+  },
+  lastRefresh: {
+    ok: {
+      refreshCompletedAt: "2025-03-04T12:00:00Z",
+      recordsProcessed: 1500,
+      status: "completed",
+    } satisfies DataRefresh,
+    empty: null,
   },
 } as const;
 
