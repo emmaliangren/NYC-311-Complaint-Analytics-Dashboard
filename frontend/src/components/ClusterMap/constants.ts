@@ -14,3 +14,4 @@ export const MAP_TESTID = "cluster-map";
 export const WRAPPER_TESTID = "cluster-map-wrapper";
 export const MAP_CLASS = "rounded-xl";
 export const CUSTOM_CLASS = "bg-red-500";
+export const LOADING_LABEL = "Loading complaints…";
