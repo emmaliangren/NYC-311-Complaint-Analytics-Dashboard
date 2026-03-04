@@ -1,7 +1,13 @@
+import ClusterMap from "@/components/ClusterMap/ClusterMap";
+
 export function ErrorBoundary() {
   return <div>Something went wrong</div>;
 }
 
 export default function Dashboard() {
-  return <h1>Dashboard</h1>;
+  return (
+    <div>
+      <ClusterMap />
+    </div>
+  );
 }

@@ -9,6 +9,9 @@ services:
       - /app/node_modules
     environment:
       VITE_BACKEND_URL: http://backend:8080
+      VITE_USE_MOCKS: "true"
+      VITE_REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:?REFRESH_INTERVAL_SECONDS is required}
+
     depends_on:
       - backend
     ports:
@@ -23,7 +26,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/devdb
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:?DB_NAME is required}
       SPRING_DATASOURCE_USERNAME: ${DB_NAME:?DB_NAME is required}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
@@ -50,8 +53,8 @@ services:
       DB_NAME: ${DB_NAME:?DB_NAME is required}
       DB_USER: ${DB_USER:?DB_USER is required}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      BATCH_SIZE: 1000
-      REFRESH_INTERVAL_SECONDS: 300
+      BATCH_SIZE: ${BATCH_SIZE:?BATCH_SIZE is required}
+      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:?REFRESH_INTERVAL_SECONDS is required}
     depends_on:
       db:
         condition: service_healthy
