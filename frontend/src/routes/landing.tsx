@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useNavigate } from "react-router";
 import { FiMap, FiList, FiBarChart2, FiNavigation } from "react-icons/fi";
 import Button from "@/components/Button";
 import Section from "@/components/Section";
 import Card from "@/components/Card";
-import PopupMessage from "@/components/PopupMessage";
 
 export default function Landing() {
-  const [showPopup, setShowPopup] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col">
@@ -31,7 +30,7 @@ export default function Landing() {
             </p>
 
             <div className="mt-10 flex justify-center">
-              <Button size="lg" onClick={() => setShowPopup(true)}>
+              <Button size="lg" onClick={() => navigate("/dashboard")}>
                 Explore the Map
               </Button>
             </div>
@@ -63,14 +62,6 @@ export default function Landing() {
           />
         </div>
       </Section>
-
-      <PopupMessage
-        message="In Development."
-        variant="info"
-        visible={showPopup}
-        onClose={() => setShowPopup(false)}
-        duration={5000}
-      />
     </div>
   );
 }
