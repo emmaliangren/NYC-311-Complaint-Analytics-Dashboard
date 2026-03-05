@@ -36,22 +36,26 @@ def fetch(page: int, page_size: int = BATCH_SIZE) -> list[dict]:
     }
 
     for attempt in range(MAX_RETRIES):
-        response = requests.post(
-            ENDPOINTS["complaints"], headers=headers, json=data, timeout=MAX_TIMEOUT
-        )
+        delay_time = RETRY_DELAY * (attempt + 1)
+        try:
+            response = requests.post(
+                ENDPOINTS["complaints"], headers=headers, json=data, timeout=MAX_TIMEOUT
+            )
 
-        print(f"API responded {response.status_code}")
+            print(f"API responded {response.status_code}")
 
-        if response.status_code == HTTP["ok"]["code"]:
-            return response.json()
+            if response.status_code == HTTP["ok"]["code"]:
+                return response.json()
 
-        if response.status_code in RETRY_CODES:
-            delay_time = RETRY_DELAY * (attempt + 1)
-            print(f"Retrying in {delay_time}s")
-            time.sleep(RETRY_DELAY * (attempt + 1))
-            continue
+            if response.status_code in RETRY_CODES:
+                print(f"Retrying in {delay_time}s")
+                time.sleep(delay_time)
+                continue
 
-        response.raise_for_status()
+            response.raise_for_status()
+        except requests.exceptions.Timeout:
+            print(f"Response timed out. Retrying in {delay_time}s")
+            time.sleep(delay_time)
 
     raise RuntimeError(f"Max retries exceeded for {ENDPOINTS['complaints']}")
 
