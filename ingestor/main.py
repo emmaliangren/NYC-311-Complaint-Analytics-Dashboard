@@ -23,9 +23,10 @@ APP_TOKEN = os.getenv("NYC_APP_TOKEN", "")
 REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL_SECONDS", "3600"))
 MAX_RETRIES = 3
 RETRY_DELAY = 5
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
 
 
-def fetch(page: int = 1, page_size: int = 100) -> list[dict]:
+def fetch(page: int, page_size: int = BATCH_SIZE) -> list[dict]:
     print(f"Fetching complaint data: {page_size} complaints from page {page}")
     headers = {"Accept": "application/json", "X-App-Token": APP_TOKEN}
     data = {
@@ -124,7 +125,7 @@ def parse_record(record: dict) -> Optional[Complaint]:
     )
 
 
-def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]):
+def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
     sql = """
     INSERT INTO complaints (
         unique_key,
@@ -169,16 +170,24 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]):
 
 
 def run():
-    data = fetch()
-    c = connection()
-    with c:
-        with c.cursor() as cursor:
-            upsert(cursor, data)
-        c.commit()
+    while True:
+        c = connection()
+        page = 1
+        with c:
+            while True:
+                data = fetch(page=page)
+                with c.cursor() as cursor:
+                    upsert(cursor, data)
+                c.commit()
+
+                if len(data) < BATCH_SIZE:
+                    break
+
+                page += 1
+        print(f"Ingestion complete, sleeping for {REFRESH_INTERVAL}s")
+        time.sleep(REFRESH_INTERVAL)
 
 
 if __name__ == "__main__":
     print("INGESTOR UP")
-    while True:
-        run()
-        time.sleep(REFRESH_INTERVAL)
+    run()
