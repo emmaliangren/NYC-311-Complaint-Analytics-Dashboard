@@ -66,11 +66,11 @@ CREATE TABLE IF NOT EXISTS data_refresh_log (
 );
 
 -- Optional table for logging row-level ingestion errors
-CREATE TABLE IF NOT EXISTS data_refresh_errors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    refresh_log_id INT,
-    unique_key VARCHAR(50),
-    error_message TEXT,
-    error_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (refresh_log_id) REFERENCES data_refresh_log(id)
-);
+-- CREATE TABLE IF NOT EXISTS data_refresh_errors (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     refresh_log_id INT,
+--     unique_key VARCHAR(50),
+--     error_message TEXT,
+--     error_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (refresh_log_id) REFERENCES data_refresh_log(id)
+-- );
