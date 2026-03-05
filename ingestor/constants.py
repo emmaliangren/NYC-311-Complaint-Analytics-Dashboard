@@ -19,5 +19,11 @@ HTTP = {
 
 RETRY_CODES = {HTTP["processing"]["code"], HTTP["rate_limited"]["code"]}
 ENDPOINTS = {
-    "complaints": "https://data.cityofnewyork.us/resource/erm2-nwe9.json",
+    "complaints": "https://data.cityofnewyork.us/api/v3/views/erm2-nwe9/query.json",
 }
+MAX_TIMEOUT = 60
+
+NYC_LAT_MIN = 40.35
+NYC_LAT_MAX = 41.0
+NYC_LNG_MIN = -74.4
+NYC_LNG_MAX = -73.55
