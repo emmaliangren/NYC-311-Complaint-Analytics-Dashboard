@@ -124,50 +124,61 @@ def parse_record(record: dict) -> Optional[Complaint]:
     )
 
 
-def upsert():
-    pass
+def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]):
+    sql = """
+    INSERT INTO complaints (
+        unique_key,
+        created_date,
+        closed_date,
+        complaint_type,
+        borough,
+        status,
+        latitude,
+        longitude
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE
+        closed_date = IF(closed_date <=> VALUES(closed_date), closed_date, VALUES(closed_date)),
+        status = IF(status <=> VALUES(status), status, VALUES(status))
+    """
+
+    records = [parse_record(x) for x in data]
+    sql_data = [
+        (
+            r.unique_key,
+            r.created_date,
+            r.closed_date,
+            r.complaint_type,
+            r.borough,
+            r.status,
+            r.latitude,
+            r.longitude,
+        )
+        for r in records
+        if r is not None
+    ]
+
+    if not sql_data:
+        print("No valid records to upsert")
+        return 0
+
+    cursor.executemany(sql, sql_data)
+    print(
+        f"Upserted {len(sql_data)} records ({len(data) - len(sql_data)} filtered out)"
+    )
+    return len(sql_data)
 
 
 def run():
     data = fetch()
     c = connection()
-    try:
-        with c:
-            with c.cursor() as cursor:
-                sql = """
-            INSERT INTO complaints (
-                unique_key,
-                created_date,
-                closed_date,
-                complaint_type,
-                borough,
-                status,
-                latitude,
-                longitude
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """
-                sql_data = [
-                    (
-                        c.unique_key,
-                        c.created_date,
-                        c.closed_date,
-                        c.complaint_type,
-                        c.borough,
-                        c.status,
-                        c.latitude,
-                        c.longitude,
-                    )
-                    for c in [parse_record(x) for x in data]
-                    if c
-                ]
-
-                cursor.executemany(sql, sql_data)
-            c.commit()
-    finally:
-        c.close()
+    with c:
+        with c.cursor() as cursor:
+            upsert(cursor, data)
+        c.commit()
 
 
 if __name__ == "__main__":
+    print("INGESTOR UP")
     while True:
         run()
         time.sleep(REFRESH_INTERVAL)
