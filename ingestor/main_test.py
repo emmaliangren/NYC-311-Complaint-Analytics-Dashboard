@@ -1,7 +1,7 @@
-from unittest.mock import _Call, call, patch, MagicMock
+from unittest.mock import _Call, patch, MagicMock
 import pytest
 from constants import HTTP, NYC_LAT_MAX, NYC_LAT_MIN, NYC_LNG_MAX, NYC_LNG_MIN
-from main import BATCH_SIZE, fetch, is_valid_coordinates, parse_record, run, upsert
+from main import fetch, is_valid_coordinates, parse_record, run, upsert
 from test_constants import (
     EXPECTED_BOROUGH,
     EXPECTED_CLOSED_DATE,
