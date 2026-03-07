@@ -9,11 +9,13 @@ import time
 from dataclasses import dataclass
 from typing import Optional, cast
 from datetime import datetime
-from dotenv import load_dotenv
 import pymysql
 import requests
 from constants import (
+    APP_TOKEN,
+    BATCH_SIZE,
     HTTP,
+    MAX_RETRIES,
     MAX_TIMEOUT,
     NYC_LAT_MAX,
     NYC_LAT_MIN,
@@ -21,15 +23,11 @@ from constants import (
     NYC_LNG_MIN,
     RETRY_CODES,
     ENDPOINTS,
+    RETRY_DELAY,
+    MAX_RECORDS,
+    BATCH_DELAY_SECONDS,
+    REFRESH_INTERVAL_SECONDS,
 )
-
-load_dotenv()
-
-APP_TOKEN = os.getenv("NYC_APP_TOKEN", "")
-REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL_SECONDS", "3600"))
-MAX_RETRIES = 3
-RETRY_DELAY = int(os.getenv("BATCH_DELAY_SECONDS", "60"))
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", "1000"))
 
 
 def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:

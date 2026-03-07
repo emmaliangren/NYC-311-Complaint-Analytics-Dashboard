@@ -1,4 +1,6 @@
 from typing import TypedDict
+import os
+from dotenv import load_dotenv
 
 
 class HttpStatus(TypedDict):
@@ -27,3 +29,13 @@ NYC_LAT_MIN = 40.35
 NYC_LAT_MAX = 41.0
 NYC_LNG_MIN = -74.4
 NYC_LNG_MAX = -73.55
+
+load_dotenv()
+
+APP_TOKEN = os.getenv("NYC_APP_TOKEN", "")
+REFRESH_INTERVAL_SECONDS = int(os.getenv("REFRESH_INTERVAL_SECONDS", "360"))
+MAX_RETRIES = 3
+RETRY_DELAY = 60
+BATCH_DELAY_SECONDS = int(os.getenv("BATCH_DELAY_SECONDS", "60"))
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "1000"))
+MAX_RECORDS = BATCH_SIZE * 10 if BATCH_SIZE <= 10000 else 100000
