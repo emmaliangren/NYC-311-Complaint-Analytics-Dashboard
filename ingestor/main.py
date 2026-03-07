@@ -209,8 +209,8 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
         longitude
     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     ON DUPLICATE KEY UPDATE
-        closed_date = IF(closed_date <=> VALUES(closed_date), closed_date, VALUES(closed_date)),
-        status = IF(status <=> VALUES(status), status, VALUES(status))
+        closed_date = IFNULL(closed_date, VALUES(closed_date)),
+        status = IFNULL(status, VALUES(status))
     """
 
     records = [parse_record(x) for x in data]
