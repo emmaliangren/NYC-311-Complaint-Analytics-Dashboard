@@ -1,6 +1,12 @@
-from unittest.mock import _Call, patch, MagicMock
+from unittest.mock import _Call, call, patch, MagicMock
 import pytest
-from constants import HTTP, NYC_LAT_MAX, NYC_LAT_MIN, NYC_LNG_MAX, NYC_LNG_MIN
+from constants import (
+    HTTP,
+    NYC_LAT_MAX,
+    NYC_LAT_MIN,
+    NYC_LNG_MAX,
+    NYC_LNG_MIN,
+)
 from main import fetch, is_valid_coordinates, parse_record, run, upsert
 from test_constants import (
     EXPECTED_BOROUGH,
@@ -186,9 +192,10 @@ def mock_conn():
 
 
 class TestRun:
+    @patch("main.BATCH_SIZE", 2)
     @patch("main.connection")
     @patch("main.fetch")
-    def test_full_page(self, mock_fetch, mock_connection, mock_conn):
+    def test_breaks_on_small_batch(self, mock_fetch, mock_connection, mock_conn):
         mock_fetch.return_value = [make_record()]
         mock_connection.return_value = mock_conn
 
@@ -196,5 +203,21 @@ class TestRun:
             with pytest.raises(StopIteration):
                 run()
 
-        mock_fetch.assert_called_once_with()
+        mock_fetch.assert_called_once_with(page=1)
         mock_conn.commit.assert_called_once()
+
+    @patch("main.BATCH_SIZE", 2)
+    @patch("main.MAX_RECORDS", 3)
+    @patch("main.connection")
+    @patch("main.fetch")
+    def test_breaks_on_max_records(self, mock_fetch, mock_connection, mock_conn):
+        mock_fetch.return_value = [make_record(), make_record()]
+        mock_connection.return_value = mock_conn
+
+        with patch("main.time.sleep", side_effect=[None, StopIteration]):
+            with pytest.raises(StopIteration):
+                run()
+
+        assert mock_fetch.call_count == 2
+        mock_fetch.assert_has_calls([call(page=1), call(page=2)])
+        assert mock_conn.commit.call_count == 2

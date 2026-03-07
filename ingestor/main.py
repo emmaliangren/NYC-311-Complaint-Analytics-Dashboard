@@ -241,20 +241,32 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
 def run():
     """Run the ingestor in a continuous loop.
 
-    Each cycle fetches one page of complaint data, upserts them into the
-    database, then sleeps for ``REFRESH_INTERVAL`` seconds before starting
-    the next cycle.
+    Each cycle repeatedly fetches pages of complaint data until we run out of data or we
+    hit our record limit. It upserts each page into the database and sleeps for
+    ``REFRESH_INTERVAL_SECONDS`` seconds before starting the next cycle.
     """
     while True:
         c = connection()
+        page = 1
+        total_records = 0
         with c:
-            data = fetch()
-            with c.cursor() as cursor:
-                upsert(cursor, data)
-            c.commit()
+            while True:
+                data = fetch(page=page)
+                with c.cursor() as cursor:
+                    total_records += upsert(cursor, data)
+                c.commit()
 
-        print(f"Ingestion complete, sleeping for {REFRESH_INTERVAL}s")
-        time.sleep(REFRESH_INTERVAL)
+                if len(data) < BATCH_SIZE:
+                    break
+
+                if total_records > MAX_RECORDS:
+                    break
+
+                page += 1
+                print(f"Ingestion complete, sleeping for {BATCH_DELAY_SECONDS}s")
+                time.sleep(BATCH_DELAY_SECONDS)
+        print(f"Ingestion complete, sleeping for {REFRESH_INTERVAL_SECONDS}s")
+        time.sleep(REFRESH_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
