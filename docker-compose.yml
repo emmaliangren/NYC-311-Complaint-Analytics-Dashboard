@@ -52,6 +52,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       BATCH_SIZE: 1000
       REFRESH_INTERVAL_SECONDS: 300
+      PYTHONUNBUFFERED: 1
     depends_on:
       db:
         condition: service_healthy
