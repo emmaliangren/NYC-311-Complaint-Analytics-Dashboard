@@ -28,15 +28,15 @@ load_dotenv()
 APP_TOKEN = os.getenv("NYC_APP_TOKEN", "")
 REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL_SECONDS", "3600"))
 MAX_RETRIES = 3
-RETRY_DELAY = 5
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
+RETRY_DELAY = int(os.getenv("BATCH_DELAY_SECONDS", "60"))
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "1000"))
 
 
-def fetch(page: int, page_size: int = BATCH_SIZE) -> list[dict]:
+def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:
     """Fetch a page of complaint records from the NYC Open Data API.
 
     Args:
-        page: page number to retrieve
+        page: page number to retrieve (defaults to ``1``)
         page_size: number of records per page (defaults to ``BATCH_SIZE``)
 
     Returns:
@@ -243,24 +243,18 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
 def run():
     """Run the ingestor in a continuous loop.
 
-    Each cycle fetches all pages of complaint data, upserts them into the
+    Each cycle fetches one page of complaint data, upserts them into the
     database, then sleeps for ``REFRESH_INTERVAL`` seconds before starting
     the next cycle.
     """
     while True:
         c = connection()
-        page = 1
         with c:
-            while True:
-                data = fetch(page=page)
-                with c.cursor() as cursor:
-                    upsert(cursor, data)
-                c.commit()
+            data = fetch()
+            with c.cursor() as cursor:
+                upsert(cursor, data)
+            c.commit()
 
-                if len(data) < BATCH_SIZE:
-                    break
-
-                page += 1
         print(f"Ingestion complete, sleeping for {REFRESH_INTERVAL}s")
         time.sleep(REFRESH_INTERVAL)
 

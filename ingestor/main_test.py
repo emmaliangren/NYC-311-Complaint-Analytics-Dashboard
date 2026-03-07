@@ -196,21 +196,5 @@ class TestRun:
             with pytest.raises(StopIteration):
                 run()
 
-        mock_fetch.assert_called_once_with(page=1)
+        mock_fetch.assert_called_once_with()
         mock_conn.commit.assert_called_once()
-
-    @patch("main.connection")
-    @patch("main.fetch")
-    def test_multiple_pages(self, mock_fetch, mock_connection, mock_conn):
-        full_page = [make_record(unique_key=str(i)) for i in range(BATCH_SIZE)]
-        partial_page = [make_record(unique_key="last")]
-        mock_fetch.side_effect = [full_page, partial_page]
-        mock_connection.return_value = mock_conn
-
-        with patch("main.time.sleep", side_effect=StopIteration):
-            with pytest.raises(StopIteration):
-                run()
-
-        assert mock_fetch.call_count == 2
-        mock_fetch.assert_has_calls([call(page=1), call(page=2)])
-        assert mock_conn.commit.call_count == 2
