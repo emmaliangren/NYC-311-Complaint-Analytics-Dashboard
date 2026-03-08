@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mariadb://database:3306/devdb
-    username: dev
-    password: dev
+    url: jdbc:mariadb://db:3306/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     hibernate:
