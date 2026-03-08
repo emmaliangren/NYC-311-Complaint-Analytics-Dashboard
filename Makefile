@@ -2,9 +2,9 @@
 	up down build restart logs ps \
 	prune clean nuke \
 	test test-frontend test-backend test-ingestor \
-	lint lint-frontend lint-backend lint-ingestor \
+	lint lint-frontend lint-backend lint-ingestor lint-f-ingestor\
 	ci ci-frontend ci-backend ci-ingestor \
-	reports reports-frontend reports-backend reports-test-backend reports-jacoco-backend reports-ingestor \
+	reports reports-frontend reports-backend reports-test-backend reports-jacoco-backend reports-ingestor reports-t-ingestor \
 	view-db \
 	deploy deploy-up deploy-down deploy-build deploy-restart deploy-logs deploy-ps deploy-clean deploy-nuke \
 	files files-frontend files-backend files-ingestor \
@@ -39,6 +39,7 @@ help:
 	@echo "  lint-frontend               lint frontend"
 	@echo "  lint-backend                lint backend"
 	@echo "  lint-ingestor               lint ingestor"
+	@echo "  lint-f-ingestor             format with black"
 	@echo ""
 	@echo "  ci                          run full ci check (lint + test)"
 	@echo "  ci-frontend                 ci check frontend"
@@ -127,6 +128,8 @@ lint-backend:
 	docker compose exec backend ./gradlew checkstyleMain
 lint-ingestor:
 	docker compose exec ingestor black --check .
+format-ingestor:
+	docker compose exec ingestor black .
 
 ci: ci-frontend ci-backend ci-ingestor
 ci-frontend:

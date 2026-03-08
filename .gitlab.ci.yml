@@ -20,6 +20,10 @@ frontend:test:
     - npm ci
   script:
     - npm run test:coverage
+  artifacts:
+    paths:
+      - frontend/coverage/
+  coverage: '/All files[^|]*\|\s*([\d.]+)/'
 
 ingestor:lint:
   stage: lint
@@ -63,4 +67,13 @@ backend:test:
     - chmod +x gradlew
   script:
     - ./gradlew test jacocoTestReport --no-daemon
-
+    - >-
+      awk -F','
+      '{ instructions += $4 + $5; covered += $5 }
+      END { printf "TOTAL Coverage: %.2f%%\n",
+      100 * covered / instructions }'
+      build/reports/jacoco/test/jacocoTestReport.csv
+  artifacts:
+    paths:
+      - backend/build/reports/jacoco/
+  coverage: '/TOTAL Coverage: ([\d.]+%)/'
