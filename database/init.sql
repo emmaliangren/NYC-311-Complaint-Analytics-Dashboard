@@ -4,24 +4,14 @@ USE devdb;
 
 CREATE TABLE IF NOT EXISTS complaints (
     unique_key VARCHAR(50) PRIMARY KEY,
-
-    created_date DATETIME,
-    closed_date DATETIME,
-
-    complaint_type VARCHAR(255),
-    borough VARCHAR(50),
-    status VARCHAR(50),
-
-    latitude DOUBLE,
-    longitude DOUBLE,
-
-    INDEX idx_geo (latitude, longitude)
-
     created_date DATETIME NOT NULL,
+    closed_date DATETIME,
     complaint_type VARCHAR(255) NOT NULL,
     borough VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL,
-
+    latitude DOUBLE,
+    longitude DOUBLE,
+    INDEX idx_geo (latitude, longitude)
     -- agency VARCHAR(100),
     -- agency_name VARCHAR(100),
     -- descriptor VARCHAR(255),
@@ -69,13 +59,3 @@ CREATE TABLE IF NOT EXISTS data_refresh_log (
     status ENUM('IN_PROGRESS', 'SUCCESS', 'FAILED') NOT NULL,
     INDEX idx_status_completed_at (status, refresh_completed_at DESC)
 );
-
--- Optional table for logging row-level ingestion errors
--- CREATE TABLE IF NOT EXISTS data_refresh_errors (
---     id INT AUTO_INCREMENT PRIMARY KEY,
---     refresh_log_id INT,
---     unique_key VARCHAR(50),
---     error_message TEXT,
---     error_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     FOREIGN KEY (refresh_log_id) REFERENCES data_refresh_log(id)
--- );

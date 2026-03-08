@@ -1,4 +1,9 @@
-from unittest.mock import _Call, call, patch, MagicMock
+from unittest.mock import (
+    _Call,
+    call,
+    patch,
+    MagicMock,
+)
 import pytest
 from constants import (
     HTTP,
@@ -7,7 +12,13 @@ from constants import (
     NYC_LNG_MAX,
     NYC_LNG_MIN,
 )
-from main import fetch, is_valid_coordinates, parse_record, run, upsert
+from main import (
+    fetch,
+    is_valid_coordinates,
+    parse_record,
+    run,
+    upsert,
+)
 from test_constants import (
     EXPECTED_BOROUGH,
     EXPECTED_CLOSED_DATE,
@@ -43,24 +54,24 @@ class TestIsValidCoordinate:
         assert is_valid_coordinates(record) is False
 
     def test_latitude_too_large(self):
-        assert (
-            is_valid_coordinates(make_record(latitude=f"{NYC_LAT_MAX + 100}")) is False
-        )
+        lat = f"{NYC_LAT_MAX + 100}"
+        record = make_record(latitude=lat)
+        assert is_valid_coordinates(record) is False
 
     def test_latitude_too_small(self):
-        assert (
-            is_valid_coordinates(make_record(latitude=f"{NYC_LAT_MIN - 100}")) is False
-        )
+        lat = f"{NYC_LAT_MIN - 100}"
+        record = make_record(latitude=lat)
+        assert is_valid_coordinates(record) is False
 
     def test_longitude_too_large(self):
-        assert (
-            is_valid_coordinates(make_record(longitude=f"{NYC_LNG_MAX + 100}")) is False
-        )
+        lng = f"{NYC_LNG_MAX + 100}"
+        record = make_record(longitude=lng)
+        assert is_valid_coordinates(record) is False
 
     def test_longitude_too_small(self):
-        assert (
-            is_valid_coordinates(make_record(longitude=f"{NYC_LNG_MIN - 100}")) is False
-        )
+        lng = f"{NYC_LNG_MIN - 100}"
+        record = make_record(longitude=lng)
+        assert is_valid_coordinates(record) is False
 
     def test_latitude_non_numeric(self):
         assert is_valid_coordinates(make_record(latitude="a")) is False
@@ -178,7 +189,7 @@ class TestFetch:
 
 
 @pytest.fixture
-def mock_conn():
+def mock_db():
     mock_cursor = MagicMock()
     mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
     mock_cursor.__exit__ = MagicMock(return_value=False)
@@ -195,24 +206,34 @@ class TestRun:
     @patch("main.BATCH_SIZE", 2)
     @patch("main.connection")
     @patch("main.fetch")
-    def test_breaks_on_small_batch(self, mock_fetch, mock_connection, mock_conn):
+    def test_breaks_on_small_batch(
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_db,
+    ):
         mock_fetch.return_value = [make_record()]
-        mock_connection.return_value = mock_conn
+        mock_conn_fn.return_value = mock_db
 
         with patch("main.time.sleep", side_effect=StopIteration):
             with pytest.raises(StopIteration):
                 run()
 
         mock_fetch.assert_called_once_with(page=1)
-        mock_conn.commit.assert_called_once()
+        assert mock_db.commit.call_count == 3
 
     @patch("main.BATCH_SIZE", 2)
     @patch("main.MAX_RECORDS", 3)
     @patch("main.connection")
     @patch("main.fetch")
-    def test_breaks_on_max_records(self, mock_fetch, mock_connection, mock_conn):
+    def test_breaks_on_max_records(
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_db,
+    ):
         mock_fetch.return_value = [make_record(), make_record()]
-        mock_connection.return_value = mock_conn
+        mock_conn_fn.return_value = mock_db
 
         with patch("main.time.sleep", side_effect=[None, StopIteration]):
             with pytest.raises(StopIteration):
@@ -220,4 +241,68 @@ class TestRun:
 
         assert mock_fetch.call_count == 2
         mock_fetch.assert_has_calls([call(page=1), call(page=2)])
-        assert mock_conn.commit.call_count == 2
+        assert mock_db.commit.call_count == 4
+
+
+class TestRunRefreshLogging:
+    @patch("main.BATCH_SIZE", 2)
+    @patch("main.RefreshLogger")
+    @patch("main.connection")
+    @patch("main.fetch")
+    def test_logs_in_progress_at_start(
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
+        mock_db,
+    ):
+        mock_fetch.return_value = [make_record()]
+        mock_conn_fn.return_value = mock_db
+        mock_logger = mock_logger_cls.return_value
+
+        with patch("main.time.sleep", side_effect=StopIteration):
+            with pytest.raises(StopIteration):
+                run()
+
+        mock_logger.start.assert_called_once()
+
+    @patch("main.BATCH_SIZE", 2)
+    @patch("main.RefreshLogger")
+    @patch("main.connection")
+    @patch("main.fetch")
+    def test_logs_success_on_happy_path(
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
+        mock_db,
+    ):
+        mock_fetch.return_value = [make_record()]
+        mock_conn_fn.return_value = mock_db
+        mock_logger = mock_logger_cls.return_value
+
+        with patch("main.time.sleep", side_effect=StopIteration):
+            with pytest.raises(StopIteration):
+                run()
+
+        mock_logger.complete.assert_called_once_with(1)
+
+    @patch("main.BATCH_SIZE", 2)
+    @patch("main.RefreshLogger")
+    @patch("main.connection")
+    @patch("main.fetch")
+    def test_logs_failed_on_fetch_error(
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
+        mock_db,
+    ):
+        mock_fetch.side_effect = RuntimeError("API down")
+        mock_conn_fn.return_value = mock_db
+        mock_logger = mock_logger_cls.return_value
+
+        with pytest.raises(RuntimeError, match="API down"):
+            run()
+
+        mock_logger.fail.assert_called_once_with("API down")

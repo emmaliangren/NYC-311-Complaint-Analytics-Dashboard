@@ -1,12 +1,5 @@
-from typing import TypedDict
 import os
 from dotenv import load_dotenv
-
-
-class HttpStatus(TypedDict):
-    code: int
-    message: str
-
 
 HTTP = {
     "ok": {"code": 200, "message": "OK"},
@@ -20,9 +13,16 @@ HTTP = {
 }
 
 RETRY_CODES = {HTTP["processing"]["code"], HTTP["rate_limited"]["code"]}
-ENDPOINTS = {
+
+NYC_OPEN_DATA = {
     "complaints": "https://data.cityofnewyork.us/api/v3/views/erm2-nwe9/query.json",
 }
+
+TABLES = {
+    "complaints": "complaints",
+    "refresh_log": "data_refresh_log",
+}
+
 MAX_TIMEOUT = 60
 
 NYC_LAT_MIN = 40.35
