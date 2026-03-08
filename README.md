@@ -57,6 +57,10 @@ make build
 | Ingestor | http://localhost:8001 |
 | Database | localhost:3306        |
 
+## Refresh Logger
+
+The ingestor tracks each data refresh cycle in the `data_refresh_log` table. A `RefreshLogger` is initialized with the database connection at the start of each cycle, recording an `IN_PROGRESS` status. On success it writes `SUCCESS` with the total record count; on failure it writes `FAILED` and re-raises the exception. The frontend queries this table to display a "Last updated: X min ago" indicator.
+
 ## Useful Commands
 
 ```bash
