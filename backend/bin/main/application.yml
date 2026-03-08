@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: complaints
+  jpa:
+    open-in-view: false
