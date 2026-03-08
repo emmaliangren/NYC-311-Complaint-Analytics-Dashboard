@@ -22,12 +22,14 @@ from constants import (
     NYC_LNG_MAX,
     NYC_LNG_MIN,
     RETRY_CODES,
-    ENDPOINTS,
+    NYC_OPEN_DATA,
     RETRY_DELAY,
     MAX_RECORDS,
     BATCH_DELAY_SECONDS,
     REFRESH_INTERVAL_SECONDS,
 )
+from logger import RefreshLogger
+from queries import UPSERT_COMPLAINT
 
 
 def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:
@@ -55,7 +57,10 @@ def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:
         delay_time = RETRY_DELAY * (attempt + 1)
         try:
             response = requests.post(
-                ENDPOINTS["complaints"], headers=headers, json=data, timeout=MAX_TIMEOUT
+                NYC_OPEN_DATA["complaints"],
+                headers=headers,
+                json=data,
+                timeout=MAX_TIMEOUT,
             )
 
             print(f"API responded {response.status_code}")
@@ -73,7 +78,7 @@ def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:
             print(f"Response timed out. Retrying in {delay_time}s")
             time.sleep(delay_time)
 
-    raise RuntimeError(f"Max retries exceeded for {ENDPOINTS['complaints']}")
+    raise RuntimeError(f"Max retries exceeded for {NYC_OPEN_DATA['complaints']}")
 
 
 def connection() -> pymysql.connect:
@@ -195,22 +200,6 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
     Returns:
         The number of valid records that were upserted.
     """
-    sql = """
-    INSERT INTO complaints (
-        unique_key,
-        created_date,
-        closed_date,
-        complaint_type,
-        borough,
-        status,
-        latitude,
-        longitude
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        closed_date = IFNULL(closed_date, VALUES(closed_date)),
-        status = IFNULL(status, VALUES(status))
-    """
-
     records = [parse_record(x) for x in data]
     sql_data = [
         (
@@ -231,7 +220,7 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
         print("No valid records to upsert")
         return 0
 
-    cursor.executemany(sql, sql_data)
+    cursor.executemany(UPSERT_COMPLAINT, sql_data)
     print(
         f"Upserted {len(sql_data)} records ({len(data) - len(sql_data)} filtered out)"
     )
@@ -241,31 +230,57 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
 def run():
     """Run the ingestor in a continuous loop.
 
-    Each cycle repeatedly fetches pages of complaint data until we run out of data or we
-    hit our record limit. It upserts each page into the database and sleeps for
-    ``REFRESH_INTERVAL_SECONDS`` seconds before starting the next cycle.
+    Each cycle fetches pages of complaint data until we run
+    out of data or hit our record limit, upserting each page
+    into the database. Sleeps for ``REFRESH_INTERVAL_SECONDS``
+    before starting the next cycle.
+
+    Each cycle is tracked in the ``data_refresh_log`` table so
+    the frontend can display data freshness and operators can
+    monitor pipeline health.
     """
     while True:
         c = connection()
         page = 1
         total_records = 0
         with c:
-            while True:
-                data = fetch(page=page)
-                with c.cursor() as cursor:
-                    total_records += upsert(cursor, data)
-                c.commit()
+            logger = RefreshLogger(c)
+            logger.start()
 
-                if len(data) < BATCH_SIZE:
-                    break
+            try:
+                while True:
+                    data = fetch(page=page)
+                    with c.cursor() as cursor:
+                        total_records += upsert(cursor, data)
+                    c.commit()
 
-                if total_records > MAX_RECORDS:
-                    break
+                    if len(data) < BATCH_SIZE:
+                        break
 
-                page += 1
-                print(f"Ingestion complete, sleeping for {BATCH_DELAY_SECONDS}s")
-                time.sleep(BATCH_DELAY_SECONDS)
-        print(f"Ingestion complete, sleeping for {REFRESH_INTERVAL_SECONDS}s")
+                    if total_records > MAX_RECORDS:
+                        break
+
+                    page += 1
+                    print(
+                        "Ingestion complete, "
+                        f"sleeping for {BATCH_DELAY_SECONDS}s"
+                    )
+                    time.sleep(BATCH_DELAY_SECONDS)
+
+                logger.complete(total_records)
+            except Exception as e:
+                error_message = str(e)
+                print(
+                    "Refresh cycle failed: "
+                    f"{error_message}"
+                )
+                logger.fail(error_message)
+                raise
+
+        print(
+            "Ingestion complete, "
+            f"sleeping for {REFRESH_INTERVAL_SECONDS}s"
+        )
         time.sleep(REFRESH_INTERVAL_SECONDS)
 
 

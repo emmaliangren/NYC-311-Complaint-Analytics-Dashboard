@@ -37,71 +37,14 @@ ingestor:test:
     - cd ingestor
     - pip install --no-cache-dir -r requirements.txt
   script:
-    - pytest --cov=. --cov-report=term-missing
-
-backend:lint:
-  stage: lint
-  image: eclipse-temurin:21-jdk-alpine
-  before_script:
-    - cd backend
-    - chmod +x gradlew
-  script:
-    - ./gradlew checkstyleMain checkstyleTest --no-daemon
-
-backend:test:
-  stage: test
-  image: eclipse-temurin:21-jdk-alpine
-  before_script:
-    - cd backend
-    - chmod +x gradlew
-  script:
-    - ./gradlew test jacocoTestReport --no-daemonworkflow:
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - if: $CI_COMMIT_BRANCH
-
-stages:
-  - lint
-  - test
-
-frontend:lint:
-  stage: lint
-  image: node:22-alpine
-  before_script:
-    - cd frontend
-    - npm ci
-  script:
-    - npm run lint
-    - npm run format:check
-
-frontend:test:
-  stage: test
-  image: node:22-alpine
-  before_script:
-    - cd frontend
-    - npm ci
-  script:
-    - npm run test:coverage
-
-ingestor:lint:
-  stage: lint
-  image: python:3.12-slim
-  before_script:
-    - cd ingestor
-    - pip install --no-cache-dir black
-  script:
-    - black --check .
-
-ingestor:test:
-  stage: test
-  image: python:3.12-slim
-  before_script:
-    - cd ingestor
-    - pip install --no-cache-dir -r requirements.txt
-  script:
-    - pytest --cov=. --cov-report=term-missing
+    - >-
+      pytest --cov=.
+      --cov-report=term-missing
+      --cov-report=html:htmlcov
+  artifacts:
+    paths:
+      - ingestor/htmlcov/
+  coverage: '/TOTAL.*\s(\d+%)/'
 
 backend:lint:
   stage: lint
@@ -120,3 +63,4 @@ backend:test:
     - chmod +x gradlew
   script:
     - ./gradlew test jacocoTestReport --no-daemon
+
