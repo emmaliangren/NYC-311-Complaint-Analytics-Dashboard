@@ -261,26 +261,17 @@ def run():
                         break
 
                     page += 1
-                    print(
-                        "Ingestion complete, "
-                        f"sleeping for {BATCH_DELAY_SECONDS}s"
-                    )
+                    print("Ingestion complete, " f"sleeping for {BATCH_DELAY_SECONDS}s")
                     time.sleep(BATCH_DELAY_SECONDS)
 
                 logger.complete(total_records)
             except Exception as e:
                 error_message = str(e)
-                print(
-                    "Refresh cycle failed: "
-                    f"{error_message}"
-                )
+                print("Refresh cycle failed: " f"{error_message}")
                 logger.fail(error_message)
                 raise
 
-        print(
-            "Ingestion complete, "
-            f"sleeping for {REFRESH_INTERVAL_SECONDS}s"
-        )
+        print("Ingestion complete, " f"sleeping for {REFRESH_INTERVAL_SECONDS}s")
         time.sleep(REFRESH_INTERVAL_SECONDS)
 
 

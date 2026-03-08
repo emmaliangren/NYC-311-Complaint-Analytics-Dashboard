@@ -207,7 +207,10 @@ class TestRun:
     @patch("main.connection")
     @patch("main.fetch")
     def test_breaks_on_small_batch(
-        self, mock_fetch, mock_conn_fn, mock_db,
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_db,
     ):
         mock_fetch.return_value = [make_record()]
         mock_conn_fn.return_value = mock_db
@@ -224,7 +227,10 @@ class TestRun:
     @patch("main.connection")
     @patch("main.fetch")
     def test_breaks_on_max_records(
-        self, mock_fetch, mock_conn_fn, mock_db,
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_db,
     ):
         mock_fetch.return_value = [make_record(), make_record()]
         mock_conn_fn.return_value = mock_db
@@ -244,7 +250,10 @@ class TestRunRefreshLogging:
     @patch("main.connection")
     @patch("main.fetch")
     def test_logs_in_progress_at_start(
-        self, mock_fetch, mock_conn_fn, mock_logger_cls,
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
         mock_db,
     ):
         mock_fetch.return_value = [make_record()]
@@ -262,7 +271,10 @@ class TestRunRefreshLogging:
     @patch("main.connection")
     @patch("main.fetch")
     def test_logs_success_on_happy_path(
-        self, mock_fetch, mock_conn_fn, mock_logger_cls,
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
         mock_db,
     ):
         mock_fetch.return_value = [make_record()]
@@ -280,7 +292,10 @@ class TestRunRefreshLogging:
     @patch("main.connection")
     @patch("main.fetch")
     def test_logs_failed_on_fetch_error(
-        self, mock_fetch, mock_conn_fn, mock_logger_cls,
+        self,
+        mock_fetch,
+        mock_conn_fn,
+        mock_logger_cls,
         mock_db,
     ):
         mock_fetch.side_effect = RuntimeError("API down")

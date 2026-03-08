@@ -75,10 +75,7 @@ class RefreshLogger:
         The ``data_refresh_log`` table itself stores only
         the timestamp and status.
         """
-        print(
-            f"Refresh {self.log_id} failed: "
-            f"{error_message}"
-        )
+        print(f"Refresh {self.log_id} failed: " f"{error_message}")
         self._execute(
             REFRESH_FAIL,
             (

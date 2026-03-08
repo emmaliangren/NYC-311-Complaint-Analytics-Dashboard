@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-
 HTTP = {
     "ok": {"code": 200, "message": "OK"},
     "processing": {"code": 202, "message": "Request Processing"},
