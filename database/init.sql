@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS complaints (
 
     INDEX idx_geo (latitude, longitude)
 
+    created_date DATETIME NOT NULL,
+    complaint_type VARCHAR(255) NOT NULL,
+    borough VARCHAR(50) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+
     -- agency VARCHAR(100),
     -- agency_name VARCHAR(100),
     -- descriptor VARCHAR(255),
