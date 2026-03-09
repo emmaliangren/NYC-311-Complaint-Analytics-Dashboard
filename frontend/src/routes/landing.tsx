@@ -17,10 +17,10 @@ export default function Landing() {
               NYC 311 Data Viewer
             </span>
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl dark:text-black">
-              Explore
+              Explore{" "}
               <span className="bg-linear-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
                 311 complaint patterns
-              </span>
+              </span>{" "}
               across your city
             </h1>
 
