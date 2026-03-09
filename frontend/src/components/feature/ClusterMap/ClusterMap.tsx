@@ -14,9 +14,7 @@ import {
   throttle,
   markerKey,
   getMarkerColours,
-  createTileLayer,
   panTo,
-  setBgForTheme,
   stylePopup,
   diffMarkers,
   getFade,
@@ -174,8 +172,8 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
     if (!refs.container.current || refs.map.current) return;
 
     refs.map.current = L.map(refs.container.current, MAP_OPTIONS).setView(NYC_CENTER, DEFAULT_ZOOM);
-    setBgForTheme(refs.container.current, dark);
-    refs.tileLayer.current = createTileLayer(dark).addTo(refs.map.current);
+    // setBgForTheme(refs.container.current, dark);
+    // refs.tileLayer.current = createTileLayer(dark).addTo(refs.map.current);
     refs.cluster.current = L.markerClusterGroup(CLUSTER_OPTIONS);
     refs.map.current.addLayer(refs.cluster.current);
 

@@ -1,6 +1,6 @@
 import type { EdgeFadeProps } from "@/types/ClusterMap";
 
-const EdgeFade = ({ colour }: EdgeFadeProps) => (
+const EdgeFade = ({ colour = "light" }: EdgeFadeProps) => (
   <div
     className="pointer-events-none absolute inset-0 rounded"
     style={{

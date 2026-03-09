@@ -26,6 +26,7 @@ export default defineConfig({
         "src/tests/**",
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
+        "**/index.{ts,tsx}",
       ],
     },
   },
