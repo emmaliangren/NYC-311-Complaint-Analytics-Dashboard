@@ -3,6 +3,7 @@ import { FiMap, FiList, FiBarChart2, FiNavigation } from "react-icons/fi";
 import Button from "@/components/ui/Button";
 import Section from "@/components/ui/Section";
 import Card from "@/components/ui/Card";
+import { PITCH } from "./data";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -37,6 +38,14 @@ export default function Landing() {
           </div>
         </Section>
       </div>
+
+      <Section title="Product Pitch">
+        <div className="flex flex-col gap-4 max-w-5xl">
+          {PITCH.map((text, index) => (
+            <p key={index}>{text}</p>
+          ))}
+        </div>
+      </Section>
 
       <Section title="Why use our service?">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
