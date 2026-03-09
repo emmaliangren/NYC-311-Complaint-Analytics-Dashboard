@@ -7,7 +7,7 @@ import {
   BUTTON_COLOUR_STYLES,
   BUTTON_SIZE_STYLES,
   DEFAULT_BUTTON_CLASS,
-} from "./Button.test.constants";
+} from "./constants";
 
 describe("Button", () => {
   it("should render button text", () => {

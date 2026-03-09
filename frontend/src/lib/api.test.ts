@@ -1,7 +1,15 @@
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { ENDPOINTS as E, FIXTURES as F } from "../mocks/constants";
 import { mock } from "../mocks/mock";
-import { checkHealth } from "./api";
+import {
+  checkHealth,
+  fetchGeoPoints,
+  fetchLastRefresh,
+  fetchGeoPointsMock,
+  fetchLastRefreshMock,
+  fetchGeoPointsReal,
+  fetchLastRefreshReal,
+} from "./api";
 import { expectResult } from "../tests/helpers";
 
 describe("checkHealth", () => {
@@ -20,3 +28,124 @@ describe("checkHealth", () => {
     await expectResult(checkHealth, F.health.error);
   });
 });
+
+describe("fetchGeoPoints", () => {
+  it("returns parsed geo points on success", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    await expectResult(fetchGeoPoints, F.geoPoints.ok);
+  });
+
+  it("returns empty array on server error", async () => {
+    mock.failure(E.geoPoints);
+    await expectResult(fetchGeoPoints, F.geoPoints.empty);
+  });
+
+  it("returns empty array on network failure", async () => {
+    mock.offline(E.geoPoints);
+    await expectResult(fetchGeoPoints, F.geoPoints.empty);
+  });
+});
+
+describe("fetchLastRefresh", () => {
+  it("returns parsed refresh data on success", async () => {
+    mock.success(E.lastRefresh, F.lastRefresh.ok);
+    await expectResult(fetchLastRefresh, F.lastRefresh.ok);
+  });
+
+  it("returns null on server error", async () => {
+    mock.failure(E.lastRefresh);
+    await expectResult(fetchLastRefresh, F.lastRefresh.empty);
+  });
+
+  it("returns null on network failure", async () => {
+    mock.offline(E.lastRefresh);
+    await expectResult(fetchLastRefresh, F.lastRefresh.empty);
+  });
+});
+
+describe("fetchGeoPointsMock", () => {
+  it("returns an array of geo points", async () => {
+    const result = await fetchGeoPointsMock();
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("returns points with required fields", async () => {
+    const result = await fetchGeoPointsMock();
+    const point = result[0];
+    expect(point).toHaveProperty("uniqueKey");
+    expect(point).toHaveProperty("latitude");
+    expect(point).toHaveProperty("longitude");
+    expect(point).toHaveProperty("complaintType");
+    expect(point).toHaveProperty("borough");
+    expect(point).toHaveProperty("status");
+  });
+});
+
+describe("fetchLastRefreshMock", () => {
+  it("returns a non-null refresh object", async () => {
+    const result = await fetchLastRefreshMock();
+    expect(result).not.toBeNull();
+  });
+
+  it("returns refresh with required fields", async () => {
+    const result = await fetchLastRefreshMock();
+    expect(result).toHaveProperty("refreshCompletedAt");
+    expect(result).toHaveProperty("recordsProcessed");
+    expect(result).toHaveProperty("status");
+  });
+});
+
+describe("fetchGeoPointsReal", () => {
+  it("passes borough query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPointsReal({ borough: "MANHATTAN" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes complaintType query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPointsReal({ complaintType: "Noise" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes status query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPointsReal({ status: "Open" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes all params together", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPointsReal({
+      borough: "BROOKLYN",
+      complaintType: "Rodent",
+      status: "Closed",
+    });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("returns empty array on failure with params", async () => {
+    mock.failure(E.geoPoints);
+    const result = await fetchGeoPointsReal({ borough: "BRONX" });
+    expect(result).toEqual([]);
+  });
+});
+
+describe("fetchLastRefreshReal", () => {
+  it("returns parsed refresh data on success", async () => {
+    mock.success(E.lastRefresh, F.lastRefresh.ok);
+    await expectResult(fetchLastRefreshReal, F.lastRefresh.ok);
+  });
+
+  it("returns null on server error", async () => {
+    mock.failure(E.lastRefresh);
+    await expectResult(fetchLastRefreshReal, F.lastRefresh.empty);
+  });
+
+  it("returns null on network failure", async () => {
+    mock.offline(E.lastRefresh);
+    await expectResult(fetchLastRefreshReal, F.lastRefresh.empty);
+  });
+});
+
