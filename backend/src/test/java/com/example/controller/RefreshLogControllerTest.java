@@ -16,24 +16,32 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(RefreshLogController.class)
 class RefreshLogControllerTest {
 
+  private static final String REFRESH_LOGS_URL = "/api/refreshlogs/latest";
+  private static final int RECORDS_PROCESSED = 1500;
+
   @Autowired private MockMvc mockMvc;
 
   @MockBean private DataRefreshLogRepository dataRefreshLogRepository;
+
+  // --- Success cases ---
 
   @Test
   void getLatest_returnsDataWhenRefreshExists() throws Exception {
     when(dataRefreshLogRepository.findFirstByStatusOrderByRefreshCompletedAtDesc(
             RefreshStatus.SUCCESS))
-        .thenReturn(Optional.of(TestFixtures.dataRefresh(1500, RefreshStatus.SUCCESS)));
+        .thenReturn(
+            Optional.of(TestFixtures.dataRefresh(RECORDS_PROCESSED, RefreshStatus.SUCCESS)));
 
     mockMvc
-        .perform(get("/api/refreshlogs/latest"))
+        .perform(get(REFRESH_LOGS_URL))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.recordsProcessed").value(1500))
+        .andExpect(jsonPath("$.recordsProcessed").value(RECORDS_PROCESSED))
         .andExpect(jsonPath("$.status").value("SUCCESS"))
         .andExpect(jsonPath("$.refreshStartedAt").isNotEmpty())
         .andExpect(jsonPath("$.refreshCompletedAt").isNotEmpty());
   }
+
+  // --- Error / edge cases ---
 
   @Test
   void getLatest_returns404WhenNoRefreshExists() throws Exception {
@@ -41,7 +49,7 @@ class RefreshLogControllerTest {
             RefreshStatus.SUCCESS))
         .thenReturn(Optional.empty());
 
-    mockMvc.perform(get("/api/refreshlogs/latest")).andExpect(status().isNotFound());
+    mockMvc.perform(get(REFRESH_LOGS_URL)).andExpect(status().isNotFound());
   }
 
   @Test
@@ -50,7 +58,7 @@ class RefreshLogControllerTest {
             RefreshStatus.SUCCESS))
         .thenReturn(Optional.empty());
 
-    mockMvc.perform(get("/api/refreshlogs/latest")).andExpect(status().isNotFound());
+    mockMvc.perform(get(REFRESH_LOGS_URL)).andExpect(status().isNotFound());
   }
 
   @Test
@@ -59,6 +67,6 @@ class RefreshLogControllerTest {
             RefreshStatus.SUCCESS))
         .thenReturn(Optional.empty());
 
-    mockMvc.perform(get("/api/refreshlogs/latest")).andExpect(status().isNotFound());
+    mockMvc.perform(get(REFRESH_LOGS_URL)).andExpect(status().isNotFound());
   }
 }

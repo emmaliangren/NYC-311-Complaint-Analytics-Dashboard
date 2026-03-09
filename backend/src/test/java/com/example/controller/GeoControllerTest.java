@@ -21,9 +21,37 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(GeoController.class)
 class GeoControllerTest {
 
+  private static final String GEO_POINTS_URL = "/api/complaints/geopoints";
+  private static final String GEO_POINTS_UNKNOWN_URL = "/api/complaints/geopoints/unknown";
+
+  private static final String KEY_1 = "1";
+  private static final String KEY_2 = "2";
+
+  private static final String BOROUGH_MANHATTAN = "Manhattan";
+  private static final double LAT_MANHATTAN = 40.7128;
+  private static final double LNG_MANHATTAN = -74.006;
+
+  private static final String BOROUGH_BROOKLYN = "Brooklyn";
+  private static final double LAT_BROOKLYN = 40.6782;
+  private static final double LNG_BROOKLYN = -73.9442;
+
+  private static final String TYPE_NOISE = "Noise";
+  private static final String TYPE_POTHOLE = "Pothole";
+
+  private static final String DATE_1 = "2025-03-01";
+  private static final String DATE_2 = "2025-03-02";
+  private static final String DATE_PATTERN = "\\d{4}-\\d{2}-\\d{2}";
+
+  private static final String STATUS_OPEN = "Open";
+  private static final String STATUS_CLOSED = "Closed";
+
+  private static final int LARGE_LIST_SIZE = 1000;
+
   @Autowired private MockMvc mockMvc;
 
   @MockBean private ComplaintRepository complaintRepository;
+
+  // --- Success cases ---
 
   @Test
   void getGeoPoints_returnsCorrectJsonShape() throws Exception {
@@ -31,21 +59,33 @@ class GeoControllerTest {
         .thenReturn(
             List.of(
                 TestFixtures.complaint(
-                    "1", 40.7128, -74.006, "Noise", "Manhattan", "2025-03-01", "Open"),
+                    KEY_1,
+                    LAT_MANHATTAN,
+                    LNG_MANHATTAN,
+                    TYPE_NOISE,
+                    BOROUGH_MANHATTAN,
+                    DATE_1,
+                    STATUS_OPEN),
                 TestFixtures.complaint(
-                    "2", 40.6782, -73.9442, "Pothole", "Brooklyn", "2025-03-02", "Closed")));
+                    KEY_2,
+                    LAT_BROOKLYN,
+                    LNG_BROOKLYN,
+                    TYPE_POTHOLE,
+                    BOROUGH_BROOKLYN,
+                    DATE_2,
+                    STATUS_CLOSED)));
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(2)))
-        .andExpect(jsonPath("$[0].uniqueKey").value("1"))
-        .andExpect(jsonPath("$[0].latitude").value(40.7128))
-        .andExpect(jsonPath("$[0].longitude").value(-74.006))
-        .andExpect(jsonPath("$[0].complaintType").value("Noise"))
-        .andExpect(jsonPath("$[0].borough").value("Manhattan"))
-        .andExpect(jsonPath("$[0].createdDate").value("2025-03-01"))
-        .andExpect(jsonPath("$[0].status").value("Open"));
+        .andExpect(jsonPath("$[0].uniqueKey").value(KEY_1))
+        .andExpect(jsonPath("$[0].latitude").value(LAT_MANHATTAN))
+        .andExpect(jsonPath("$[0].longitude").value(LNG_MANHATTAN))
+        .andExpect(jsonPath("$[0].complaintType").value(TYPE_NOISE))
+        .andExpect(jsonPath("$[0].borough").value(BOROUGH_MANHATTAN))
+        .andExpect(jsonPath("$[0].createdDate").value(DATE_1))
+        .andExpect(jsonPath("$[0].status").value(STATUS_OPEN));
   }
 
   @Test
@@ -53,7 +93,7 @@ class GeoControllerTest {
     when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
   }
@@ -63,35 +103,31 @@ class GeoControllerTest {
     when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON));
   }
 
   @Test
-  void getGeoPoints_methodNotAllowedForPost() throws Exception {
-    mockMvc.perform(post("/api/complaints/geopoints")).andExpect(status().isMethodNotAllowed());
-  }
-
-  @Test
   void getGeoPoints_returnsOkWhenRepositoryReturnsLargeList() throws Exception {
     List<Complaint> large = new ArrayList<>();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < LARGE_LIST_SIZE; i++) {
       large.add(
           TestFixtures.complaint(
-              String.valueOf(i), 40.7128, -74.006, "Noise", "Manhattan", "2025-03-01", "Open"));
+              String.valueOf(i),
+              LAT_MANHATTAN,
+              LNG_MANHATTAN,
+              TYPE_NOISE,
+              BOROUGH_MANHATTAN,
+              DATE_1,
+              STATUS_OPEN));
     }
     when(complaintRepository.findAllWithCoordinates()).thenReturn(large);
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$", hasSize(1000)));
-  }
-
-  @Test
-  void getGeoPoints_unknownPathReturns404() throws Exception {
-    mockMvc.perform(get("/api/complaints/geopoints/unknown")).andExpect(status().isNotFound());
+        .andExpect(jsonPath("$", hasSize(LARGE_LIST_SIZE)));
   }
 
   @Test
@@ -100,12 +136,18 @@ class GeoControllerTest {
         .thenReturn(
             List.of(
                 TestFixtures.complaint(
-                    "1", 40.7128, -74.006, "Noise", "Manhattan", "2025-03-01", "Open")));
+                    KEY_1,
+                    LAT_MANHATTAN,
+                    LNG_MANHATTAN,
+                    TYPE_NOISE,
+                    BOROUGH_MANHATTAN,
+                    DATE_1,
+                    STATUS_OPEN)));
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].createdDate").value(matchesPattern("\\d{4}-\\d{2}-\\d{2}")));
+        .andExpect(jsonPath("$[0].createdDate").value(matchesPattern(DATE_PATTERN)));
   }
 
   @Test
@@ -113,8 +155,20 @@ class GeoControllerTest {
     when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
 
     mockMvc
-        .perform(get("/api/complaints/geopoints"))
+        .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
+  }
+
+  // --- Error / edge cases ---
+
+  @Test
+  void getGeoPoints_methodNotAllowedForPost() throws Exception {
+    mockMvc.perform(post(GEO_POINTS_URL)).andExpect(status().isMethodNotAllowed());
+  }
+
+  @Test
+  void getGeoPoints_unknownPathReturns404() throws Exception {
+    mockMvc.perform(get(GEO_POINTS_UNKNOWN_URL)).andExpect(status().isNotFound());
   }
 }
