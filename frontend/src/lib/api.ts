@@ -1,7 +1,9 @@
-import type { GeoPoint, DataRefresh } from "@/types/geo";
+import type { GeoPoint } from "@/types/geopoints";
 import type { HealthCheck } from "../types/api";
 import { logError } from "./util";
-import { MOCK_POINTS, MOCK_REFRESH } from "./api.mock";
+import { MOCK_POINTS  } from "./api.constants";
+import type { DataRefresh } from "@/types/logs";
+import { MOCK_REFRESH } from "./api.mocks";
 
 const useMocks = import.meta.env.VITE_USE_MOCKS === "true";
 
@@ -18,12 +20,12 @@ export const checkHealth = async (): Promise<HealthCheck> => {
   }
 };
 
-const fetchGeoPointsMock = async (): Promise<GeoPoint[]> => {
+export const fetchGeoPointsMock = async (): Promise<GeoPoint[]> => {
   await new Promise((resolve) => setTimeout(resolve, 500));
   return MOCK_POINTS;
 };
 
-const fetchGeoPointsReal = async (params?: {
+export const fetchGeoPointsReal = async (params?: {
   borough?: string;
   complaintType?: string;
   status?: string;
@@ -44,12 +46,12 @@ const fetchGeoPointsReal = async (params?: {
   }
 };
 
-const fetchLastRefreshMock = async (): Promise<DataRefresh | null> => {
+export const fetchLastRefreshMock = async (): Promise<DataRefresh | null> => {
   await new Promise((resolve) => setTimeout(resolve, 300));
   return MOCK_REFRESH;
 };
 
-const fetchLastRefreshReal = async (): Promise<DataRefresh | null> => {
+export const fetchLastRefreshReal = async (): Promise<DataRefresh | null> => {
   try {
     const response = await fetch("/api/complaints/geo/last-refresh");
     if (!response.ok) throw new Error(`Failed to fetch last refresh: ${response.status}`);
@@ -62,3 +64,4 @@ const fetchLastRefreshReal = async (): Promise<DataRefresh | null> => {
 
 export const fetchGeoPoints = useMocks ? fetchGeoPointsMock : fetchGeoPointsReal;
 export const fetchLastRefresh = useMocks ? fetchLastRefreshMock : fetchLastRefreshReal;
+

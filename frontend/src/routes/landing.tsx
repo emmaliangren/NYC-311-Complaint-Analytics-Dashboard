@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
 import { FiMap, FiList, FiBarChart2, FiNavigation } from "react-icons/fi";
-import Button from "@/components/Button";
-import Section from "@/components/Section";
-import Card from "@/components/Card";
+import Button from "@/components/ui/Button";
+import Section from "@/components/ui/Section";
+import Card from "@/components/ui/Card";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -17,10 +17,10 @@ export default function Landing() {
               NYC 311 Data Viewer
             </span>
             <h1 className="text-4xl font-bold tracking-tight sm:text-6xl dark:text-black">
-              Explore{" "}
+              Explore
               <span className="bg-linear-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
                 311 complaint patterns
-              </span>{" "}
+              </span>
               across your city
             </h1>
 

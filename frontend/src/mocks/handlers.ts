@@ -6,3 +6,4 @@ export const handlers = [
   http.get(E.geoPoints, () => HttpResponse.json(F.geoPoints.ok)),
   http.get(E.lastRefresh, () => HttpResponse.json(F.lastRefresh.ok)),
 ];
+

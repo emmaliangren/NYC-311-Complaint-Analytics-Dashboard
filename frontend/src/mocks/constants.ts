@@ -1,5 +1,6 @@
-import type { GeoPoint, DataRefresh } from "@/types/geo";
+import type { GeoPoint } from "@/types/geopoints";
 import type { HealthCheck, ServiceStatus, HttpLabel, HttpCode } from "../types/api";
+import type { DataRefresh } from "@/types/logs";
 
 export const ENDPOINTS = {
   health: "/api/health",
@@ -52,3 +53,4 @@ export const HTTP = {
   notFound: 404,
   serverError: 500,
 } as const satisfies Record<HttpLabel, HttpCode>;
+
