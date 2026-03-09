@@ -1,10 +1,9 @@
 import path from "path";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -14,6 +13,9 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/vitest.setup.ts",
+    env: {
+      VITE_USE_MOCKS: "false",
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
@@ -24,6 +26,7 @@ export default defineConfig({
         "src/tests/**",
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
+        "**/index.{ts,tsx}",
       ],
     },
   },

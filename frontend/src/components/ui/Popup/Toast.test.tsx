@@ -1,16 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import PopupMessage from "./PopupMessage";
+import ToastMessage from "./Toast";
 import {
   TEST_MESSAGE,
   OPACITY_STYLE,
   INVISIBLE_DISABLE_EVENTS,
   VARIANT_STYLES,
   TIMER_DURATION,
-} from "./PopupMessage.test.constants";
+} from "./constants";
 
-describe("PopupMessage", () => {
+describe("ToastMessage", () => {
   const defaultProps = {
     message: TEST_MESSAGE,
     visible: true,
@@ -18,27 +18,27 @@ describe("PopupMessage", () => {
   };
 
   it("should render the message text", () => {
-    render(<PopupMessage {...defaultProps} />);
+    render(<ToastMessage {...defaultProps} />);
     expect(screen.getByText(TEST_MESSAGE)).toBeInTheDocument();
   });
 
   it("should have visible classes when visible is true", () => {
-    render(<PopupMessage {...defaultProps} />);
-    const popup = screen.getByRole("alert");
-    expect(popup).toHaveClass(OPACITY_STYLE.VISIBLE);
-    expect(popup).not.toHaveClass(INVISIBLE_DISABLE_EVENTS);
+    render(<ToastMessage {...defaultProps} />);
+    const toast = screen.getByRole("alert");
+    expect(toast).toHaveClass(OPACITY_STYLE.VISIBLE);
+    expect(toast).not.toHaveClass(INVISIBLE_DISABLE_EVENTS);
   });
 
   it("sould have hidden classes when visible is false", () => {
-    render(<PopupMessage {...defaultProps} visible={false} />);
-    const popup = screen.getByRole("alert");
-    expect(popup).toHaveClass(OPACITY_STYLE.NOT_VISIBLE);
-    expect(popup).toHaveClass(INVISIBLE_DISABLE_EVENTS);
+    render(<ToastMessage {...defaultProps} visible={false} />);
+    const toast = screen.getByRole("alert");
+    expect(toast).toHaveClass(OPACITY_STYLE.NOT_VISIBLE);
+    expect(toast).toHaveClass(INVISIBLE_DISABLE_EVENTS);
   });
 
   it("should call onClose when the close button is clicked", async () => {
     const onClose = vi.fn();
-    render(<PopupMessage {...defaultProps} onClose={onClose} />);
+    render(<ToastMessage {...defaultProps} onClose={onClose} />);
 
     await userEvent.click(screen.getByRole("button"));
     expect(onClose).toHaveBeenCalledOnce();
@@ -46,12 +46,12 @@ describe("PopupMessage", () => {
 
   describe("variant styles", () => {
     it("should apply info variant style by default", () => {
-      render(<PopupMessage {...defaultProps} />);
+      render(<ToastMessage {...defaultProps} />);
       expect(screen.getByRole("alert")).toHaveClass(VARIANT_STYLES.INFO);
     });
 
     it("should apply other variant styles", () => {
-      render(<PopupMessage {...defaultProps} variant="error" />);
+      render(<ToastMessage {...defaultProps} variant="error" />);
       expect(screen.getByRole("alert")).toHaveClass(VARIANT_STYLES.ERROR);
     });
   });
@@ -67,7 +67,7 @@ describe("PopupMessage", () => {
 
     it("should call onClose after the specified duration", () => {
       const onClose = vi.fn();
-      render(<PopupMessage {...defaultProps} onClose={onClose} duration={TIMER_DURATION} />);
+      render(<ToastMessage {...defaultProps} onClose={onClose} duration={TIMER_DURATION} />);
 
       expect(onClose).not.toHaveBeenCalled();
       vi.advanceTimersByTime(TIMER_DURATION);
@@ -76,7 +76,7 @@ describe("PopupMessage", () => {
 
     it("should not auto-dismiss when duration is not set", () => {
       const onClose = vi.fn();
-      render(<PopupMessage {...defaultProps} onClose={onClose} />);
+      render(<ToastMessage {...defaultProps} onClose={onClose} />);
 
       vi.advanceTimersByTime(TIMER_DURATION);
       expect(onClose).not.toHaveBeenCalled();
@@ -85,7 +85,7 @@ describe("PopupMessage", () => {
     it("should not auto-dismiss when not visible", () => {
       const onClose = vi.fn();
       render(
-        <PopupMessage
+        <ToastMessage
           {...defaultProps}
           visible={false}
           onClose={onClose}

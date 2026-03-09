@@ -141,7 +141,7 @@ ci-ingestor:
 
 reports: reports-frontend reports-backend reports-ingestor
 reports-frontend:
-	docker compose exec frontend npm run coverage
+	docker compose exec frontend npm run test:coverage
 	open frontend/coverage/lcov-report/index.html
 reports-backend: reports-test-backend reports-jacoco-backend
 reports-test-backend:

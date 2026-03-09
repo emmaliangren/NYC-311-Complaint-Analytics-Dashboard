@@ -1,11 +1,11 @@
 import { FiX, FiInfo, FiCheckCircle, FiAlertTriangle, FiAlertCircle } from "react-icons/fi";
 import { clsx } from "clsx";
-import type { PopupProps, PopupVariant } from "@/types/PopupMessage";
+import type { ToastProps, ToastVariant } from "@/types/Toast";
 import { useEffect, type ReactNode } from "react";
-import Button from "./Button";
+import Button from "@/components/ui/Button";
 
 // Colour scheme per variant
-const variantStyles: Record<PopupVariant, string> = {
+const variantStyles: Record<ToastVariant, string> = {
   info: "border-blue-200 bg-blue-50 text-blue-800",
   success: "border-green-200 bg-green-50 text-green-800",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
@@ -13,7 +13,7 @@ const variantStyles: Record<PopupVariant, string> = {
 };
 
 // Icon per variant
-const variantIcons: Record<PopupVariant, ReactNode> = {
+const variantIcons: Record<ToastVariant, ReactNode> = {
   info: <FiInfo />,
   success: <FiCheckCircle />,
   warning: <FiAlertTriangle />,
@@ -28,13 +28,13 @@ const variantIcons: Record<PopupVariant, ReactNode> = {
  * @param onClose - Callback function to close the popup
  * @param duration - Optional duration for the popup to disappear
  */
-export default function PopupMessage({
+export default function ToastMessage({
   message,
   variant = "info",
   visible,
   onClose,
   duration,
-}: PopupProps) {
+}: ToastProps) {
   useEffect(() => {
     // Don't need to set a timer if the popup isn't visible or shouldn't automatically disappear
     if (!visible || !duration) return;
@@ -47,7 +47,7 @@ export default function PopupMessage({
       className={clsx(
         "fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-xl border px-5 py-3.5 shadow-lg transition-all duration-300",
         variantStyles[variant],
-        visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+        visible ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
       role="alert"
     >

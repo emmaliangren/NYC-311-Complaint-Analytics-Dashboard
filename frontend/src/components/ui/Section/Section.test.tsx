@@ -9,7 +9,7 @@ import {
   BASE_CLASS,
   CUSTOM_CLASS,
   HEADING_LEVEL,
-} from "./Section.test.constants";
+} from "./constants";
 
 describe("Section", () => {
   it("should render children content", () => {
