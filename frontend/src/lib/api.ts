@@ -1,11 +1,9 @@
 import type { GeoPoint } from "@/types/geopoints";
 import type { HealthCheck } from "../types/api";
-import { logError } from "./util";
-import { MOCK_POINTS  } from "./api.constants";
 import type { DataRefresh } from "@/types/logs";
+import { logError } from "./util";
+import { MOCK_POINTS } from "./api.constants";
 import { MOCK_REFRESH } from "./api.mocks";
-
-const useMocks = import.meta.env.VITE_USE_MOCKS === "true";
 
 export const checkHealth = async (): Promise<HealthCheck> => {
   try {
@@ -25,7 +23,7 @@ export const fetchGeoPointsMock = async (): Promise<GeoPoint[]> => {
   return MOCK_POINTS;
 };
 
-export const fetchGeoPointsReal = async (params?: {
+export const fetchGeoPoints = async (params?: {
   borough?: string;
   complaintType?: string;
   status?: string;
@@ -36,7 +34,7 @@ export const fetchGeoPointsReal = async (params?: {
     if (params?.complaintType) query.set("complaintType", params.complaintType);
     if (params?.status) query.set("status", params.status);
 
-    const url = `/api/complaints/geo/points${query.toString() ? `?${query}` : ""}`;
+    const url = `/api/complaints/geopoints${query.toString() ? `?${query}` : ""}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch geo points: ${response.status}`);
     return await response.json();
@@ -51,9 +49,9 @@ export const fetchLastRefreshMock = async (): Promise<DataRefresh | null> => {
   return MOCK_REFRESH;
 };
 
-export const fetchLastRefreshReal = async (): Promise<DataRefresh | null> => {
+export const fetchLastRefresh = async (): Promise<DataRefresh | null> => {
   try {
-    const response = await fetch("/api/complaints/geo/last-refresh");
+    const response = await fetch("/api/refreshlogs/latest");
     if (!response.ok) throw new Error(`Failed to fetch last refresh: ${response.status}`);
     return await response.json();
   } catch (error) {
@@ -61,7 +59,3 @@ export const fetchLastRefreshReal = async (): Promise<DataRefresh | null> => {
     return null;
   }
 };
-
-export const fetchGeoPoints = useMocks ? fetchGeoPointsMock : fetchGeoPointsReal;
-export const fetchLastRefresh = useMocks ? fetchLastRefreshMock : fetchLastRefreshReal;
-

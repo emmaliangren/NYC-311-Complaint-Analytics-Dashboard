@@ -11,7 +11,7 @@ import { isDark } from "@/scripts/theme";
 import {
   createPopup,
   clearIconCache,
-  debounce,
+  throttle,
   markerKey,
   getMarkerColours,
   createTileLayer,
@@ -30,9 +30,7 @@ import {
   MIN_ZOOM,
   CHUNK_SIZE,
   PAN_RERANK_DEBOUNCE,
-  RECOLOUR_DELAY,
   MAP_OPTIONS,
-  ZOOM_DELTA,
   MIN_LOAD_MS,
 } from "./lib/constants";
 import {
@@ -49,7 +47,6 @@ import useRefs from "@/hooks/useRefs";
 import useSettings from "@/hooks/useSettings";
 import { CLUSTER_OPTIONS } from "./lib/data";
 
-// used to associate the geopoint data with markers without mutating Leaflet objects
 const markerGeoPoints = new WeakMap<L.Marker, GeoPoint>();
 
 type ClusterMouseEvent = L.LeafletEvent & { layer: L.MarkerCluster };
@@ -94,13 +91,16 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
           nextMap.set(key, existing);
         } else {
           const icons = getMarkerColours(p.status, colourByStatus);
-          const marker = L.marker([p.latitude, p.longitude], { icon: icons.normal }).bindPopup(
-            createPopup(p, isDarkRef.current),
-            { autoPan: false }
-          );
+          const marker = L.marker([p.latitude, p.longitude], { icon: icons.normal });
+
+          let popupBound = false;
           markerGeoPoints.set(marker, p);
 
           marker.on("mouseover", () => {
+            if (!popupBound) {
+              marker.bindPopup(createPopup(p, isDarkRef.current), { autoPan: false });
+              popupBound = true;
+            }
             marker.setIcon(getMarkerColours(p.status, settings.colourByStatusRef.current).hovered);
             marker.openPopup();
             stylePopup(marker.getPopup()?.getElement(), isDarkRef.current);
@@ -121,7 +121,7 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
       }
 
       if (i < points.length) {
-        setTimeout(processChunk, 0);
+        requestAnimationFrame(processChunk);
         return;
       }
 
@@ -138,7 +138,7 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
       setTimeout(() => setLoading(false), Math.max(0, MIN_LOAD_MS - elapsed));
     };
 
-    setTimeout(processChunk, 0);
+    requestAnimationFrame(processChunk);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadPoints = useCallback(async () => {
@@ -164,22 +164,6 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
   useEffect(() => {
     if (!refs.map.current || !refs.cluster.current) return;
     setLoading(true);
-    let id: ReturnType<typeof setTimeout>;
-    const raf = requestAnimationFrame(() => {
-      id = setTimeout(() => {
-        if (!refs.cluster.current || !refs.map.current) return;
-        buildMarkers(refs.cachedPoints.current, settings.colourByStatus);
-      }, RECOLOUR_DELAY);
-    });
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(id);
-    };
-  }, [settings.colourByStatus, buildMarkers]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!refs.map.current || !refs.cluster.current) return;
-    setLoading(true);
     refs.cluster.current.clearLayers();
     refs.markers.current.clear();
     clearIconCache();
@@ -196,11 +180,19 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
     refs.map.current.addLayer(refs.cluster.current);
 
     refs.cluster.current.on("clusterclick", (e: ClusterMouseEvent) => {
-      L.DomEvent.stop(e);
       if (!refs.map.current) return;
 
+      const currentZoom = refs.map.current.getZoom();
+
+      if (currentZoom >= MAX_ZOOM) {
+        e.layer.spiderfy();
+        return;
+      }
+
+      L.DomEvent.stop(e);
+
       const center = e.layer.getLatLng();
-      const nextZoom = refs.map.current.getZoom() + ZOOM_DELTA;
+      const nextZoom = currentZoom + 1;
 
       if (settings.panOnClusterRef.current) {
         refs.map.current.flyTo(center, nextZoom, {
@@ -228,15 +220,7 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
     const clusterPane = refs.clusterPane.current;
     if (clusterPane) clusterPane.style.transition = "opacity 0.15s ease";
 
-    refs.map.current.on("zoomanim", () => {
-      if (clusterPane) {
-        clusterPane.style.transition = "opacity 0.25s ease-out";
-        clusterPane.style.opacity = "0";
-      }
-    });
-
     refs.map.current.on("zoomend", () => {
-      tryRefreshIcons(refs.cluster.current, refs.map.current);
       if (clusterPane) {
         clusterPane.style.opacity = "0";
         requestAnimationFrame(() => {
@@ -247,19 +231,20 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
       setZoom(refs.map.current!.getZoom());
     });
 
-    const debouncedPanRerank = debounce(() => {
+    const throttledRefresh = throttle(() => {
       tryRefreshIcons(refs.cluster.current, refs.map.current);
     }, PAN_RERANK_DEBOUNCE);
 
     refs.map.current.on("click", () => setSelectedPoint(null));
-    refs.map.current.on("moveend", debouncedPanRerank);
+    refs.map.current.on("zoomend", throttledRefresh);
+    refs.map.current.on("moveend", throttledRefresh);
 
     loadPoints();
     const interval = setInterval(loadPoints, REFRESH_INTERVAL);
 
     return () => {
       clearInterval(interval);
-      debouncedPanRerank.cancel();
+      throttledRefresh.cancel();
       refs.markers.current.clear();
       clearIconCache();
       refs.map.current?.remove();

@@ -45,10 +45,11 @@ export function computeRankCutoffs(counts: number[]) {
   }
 }
 
-const iconCache = new Map<string, L.DivIcon>();
+const clusterIconCache = new Map<string, L.DivIcon>();
+const markerIconCache = new Map<string, L.DivIcon>();
 
 export function clearIconCache() {
-  iconCache.clear();
+  clusterIconCache.clear();
 }
 
 function fmt(n: number) {
@@ -66,7 +67,7 @@ export const clusterIconHex = (cluster: L.MarkerCluster): L.DivIcon => {
   const { color, size, tier } = getTier(count);
 
   const key = `hex:${tier}:${count}`;
-  const cached = iconCache.get(key);
+  const cached = clusterIconCache.get(key);
   if (cached) return cached;
 
   const fontSize = size < 36 ? 11 : 13;
@@ -93,7 +94,7 @@ export const clusterIconHex = (cluster: L.MarkerCluster): L.DivIcon => {
     className: "",
     iconSize: [s, s] as L.PointExpression,
   });
-  iconCache.set(key, icon);
+  clusterIconCache.set(key, icon);
   return icon;
 };
 
@@ -102,7 +103,7 @@ export const clusterIcon = (cluster: L.MarkerCluster): L.DivIcon => {
   const { color, size, tier } = getTier(count);
 
   const key = `circle:${tier}:${count}`;
-  const cached = iconCache.get(key);
+  const cached = clusterIconCache.get(key);
   if (cached) return cached;
 
   const s = size + 12;
@@ -123,7 +124,7 @@ export const clusterIcon = (cluster: L.MarkerCluster): L.DivIcon => {
     iconSize: [s, s] as L.PointExpression,
     iconAnchor: [s / 2, s / 2] as L.PointExpression,
   });
-  iconCache.set(key, icon);
+  clusterIconCache.set(key, icon);
   return icon;
 };
 
@@ -138,6 +139,10 @@ if (typeof document !== "undefined" && !document.getElementById("cluster-icon-ci
     .cluster-icon-circle:hover svg {
       filter: brightness(1.4);
     }
+    .leaflet-cluster-anim .leaflet-marker-icon,
+    .leaflet-cluster-anim .leaflet-marker-shadow {
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -146,7 +151,12 @@ type FeatureGroupLayer = L.FeatureGroup & { _featureGroup: L.FeatureGroup };
 
 export function collectVisibleClusterCounts(cg: L.MarkerClusterGroup, map: L.Map): number[] {
   const counts: number[] = [];
-  const bounds = map.getBounds();
+  let bounds: L.LatLngBounds;
+  try {
+    bounds = map.getBounds();
+  } catch {
+    return counts;
+  }
   const fg = (cg as unknown as FeatureGroupLayer)._featureGroup;
   if (!fg) return counts;
 
@@ -179,9 +189,13 @@ export const STATUS_MARKER_COLOURS: Record<string, { normal: string; hovered: st
 const DEFAULT_MARKER_COLOURS = { normal: "rgba(99,102,241,0.85)", hovered: "rgba(79,70,229,1)" };
 
 export function makeMarkerIcon(fill: string, hovered: boolean): L.DivIcon {
+  const key = `${fill}:${hovered ? 1 : 0}`;
+  const cached = markerIconCache.get(key);
+  if (cached) return cached;
+
   const stroke = hovered ? "white" : "rgba(255,255,255,0.9)";
   const strokeWidth = hovered ? "2" : "1.5";
-  return divIcon({
+  const icon = divIcon({
     html: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="30" viewBox="0 0 22 30">
       <path d="M11 0C4.925 0 0 4.925 0 11c0 7.667 11 19 11 19s11-11.333 11-19c0-6.075-4.925-11-11-11z"
         fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
@@ -192,6 +206,8 @@ export function makeMarkerIcon(fill: string, hovered: boolean): L.DivIcon {
     iconAnchor: [11, 30] as L.PointExpression,
     popupAnchor: [0, -32] as L.PointExpression,
   });
+  markerIconCache.set(key, icon);
+  return icon;
 }
 
 export function getMarkerColours(status: string, colourByStatus = true) {
@@ -256,6 +272,39 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
     if (id !== null) clearTimeout(id);
   };
   return debounced as T & { cancel(): void };
+}
+
+export function throttle<T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  ms: number
+): T & { cancel(): void } {
+  let lastRan = 0;
+  let id: ReturnType<typeof setTimeout> | null = null;
+
+  const throttled = (...args: Parameters<T>) => {
+    const now = Date.now();
+    const remaining = ms - (now - lastRan);
+
+    if (remaining <= 0) {
+      if (id !== null) {
+        clearTimeout(id);
+        id = null;
+      }
+      lastRan = now;
+      fn(...args);
+    } else if (id === null) {
+      id = setTimeout(() => {
+        lastRan = Date.now();
+        id = null;
+        fn(...args);
+      }, remaining);
+    }
+  };
+  throttled.cancel = () => {
+    if (id !== null) clearTimeout(id);
+    id = null;
+  };
+  return throttled as T & { cancel(): void };
 }
 
 export const TILE_OPTIONS: L.TileLayerOptions = {
@@ -332,6 +381,12 @@ export function diffMarkers(
   if (toAdd.length > 0) cluster.addLayers(toAdd);
 
   refreshRankedIcons(cluster, map);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      refreshRankedIcons(cluster, map);
+    });
+  });
 }
 
 export function tryRefreshIcons(cluster: L.MarkerClusterGroup | null, map: L.Map | null) {

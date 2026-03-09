@@ -15,10 +15,10 @@ export const cn = (...inputs: ClassValue[]): string => {
 
 export const formatTime = (iso: string): string => {
   const d = new Date(iso);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 };
 
 export const formatDate = (iso: string): string => {
   const d = new Date(iso);
-  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };

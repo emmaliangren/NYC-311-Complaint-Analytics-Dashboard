@@ -4,6 +4,11 @@ type Status = "Open" | "Closed" | "In Progress" | "Assigned" | "Started" | "Pend
 
 // seeded PRNG (mulberry32) for deterministic mock data
 let _seed = 42;
+
+export function resetSeed(s = 42) {
+  _seed = s;
+}
+
 function rng(): number {
   _seed = (_seed + 0x6d2b79f5) | 0;
   let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);

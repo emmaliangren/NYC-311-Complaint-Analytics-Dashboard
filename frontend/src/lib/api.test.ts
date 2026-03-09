@@ -7,8 +7,6 @@ import {
   fetchLastRefresh,
   fetchGeoPointsMock,
   fetchLastRefreshMock,
-  fetchGeoPointsReal,
-  fetchLastRefreshReal,
 } from "./api";
 import { expectResult } from "../tests/helpers";
 
@@ -43,6 +41,40 @@ describe("fetchGeoPoints", () => {
   it("returns empty array on network failure", async () => {
     mock.offline(E.geoPoints);
     await expectResult(fetchGeoPoints, F.geoPoints.empty);
+  });
+
+  it("passes borough query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPoints({ borough: "MANHATTAN" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes complaintType query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPoints({ complaintType: "Noise" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes status query param", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPoints({ status: "Open" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("passes all params together", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    const result = await fetchGeoPoints({
+      borough: "BROOKLYN",
+      complaintType: "Rodent",
+      status: "Closed",
+    });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("returns empty array on failure with params", async () => {
+    mock.failure(E.geoPoints);
+    const result = await fetchGeoPoints({ borough: "BRONX" });
+    expect(result).toEqual([]);
   });
 });
 
@@ -95,57 +127,3 @@ describe("fetchLastRefreshMock", () => {
     expect(result).toHaveProperty("status");
   });
 });
-
-describe("fetchGeoPointsReal", () => {
-  it("passes borough query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPointsReal({ borough: "MANHATTAN" });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it("passes complaintType query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPointsReal({ complaintType: "Noise" });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it("passes status query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPointsReal({ status: "Open" });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it("passes all params together", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPointsReal({
-      borough: "BROOKLYN",
-      complaintType: "Rodent",
-      status: "Closed",
-    });
-    expect(Array.isArray(result)).toBe(true);
-  });
-
-  it("returns empty array on failure with params", async () => {
-    mock.failure(E.geoPoints);
-    const result = await fetchGeoPointsReal({ borough: "BRONX" });
-    expect(result).toEqual([]);
-  });
-});
-
-describe("fetchLastRefreshReal", () => {
-  it("returns parsed refresh data on success", async () => {
-    mock.success(E.lastRefresh, F.lastRefresh.ok);
-    await expectResult(fetchLastRefreshReal, F.lastRefresh.ok);
-  });
-
-  it("returns null on server error", async () => {
-    mock.failure(E.lastRefresh);
-    await expectResult(fetchLastRefreshReal, F.lastRefresh.empty);
-  });
-
-  it("returns null on network failure", async () => {
-    mock.offline(E.lastRefresh);
-    await expectResult(fetchLastRefreshReal, F.lastRefresh.empty);
-  });
-});
-

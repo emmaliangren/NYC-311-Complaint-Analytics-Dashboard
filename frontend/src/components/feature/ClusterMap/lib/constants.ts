@@ -12,10 +12,13 @@ export const MIN_ZOOM = 10;
 
 export const BOUNDS_VISCOSITY = 0.8;
 
-export const ZOOM_SNAP = 2;
-export const ZOOM_DELTA = 2;
+export const ZOOM_SNAP = 1;
+export const ZOOM_DELTA = 1;
+
 export const WHEEL_DEBOUNCE_TIME = 120;
-export const PAN_RERANK_DEBOUNCE = 300;
+
+export const PAN_RERANK_DEBOUNCE = 800;
+
 export const RECOLOUR_DELAY = 80;
 export const PAN_DURATION = 0.4;
 export const PAN_EASING = 0.15;
@@ -33,10 +36,12 @@ export const MAP_OPTIONS: L.MapOptions = {
   fadeAnimation: true,
   markerZoomAnimation: true,
 };
+
 export const REFRESH_INTERVAL =
   (Number(import.meta.env.VITE_REFRESH_INTERVAL_SECONDS) || 3600) * 1000;
 
-export const CHUNK_SIZE = 200;
+export const CHUNK_SIZE = 1500;
+
 export const MAP_TESTID = "cluster-map";
 export const WRAPPER_TESTID = "cluster-map-wrapper";
 export const ROUNDED_BORDER = "rounded";
@@ -102,5 +107,5 @@ export const POPUP_SHADOW_DARK = "0 4px 12px rgba(0,0,0,0.5)";
 export const POPUP_BORDER_RADIUS = "2px";
 
 export const TIMEOUT = 3000;
-export const MIN_LOAD_MS = 3000;
+export const MIN_LOAD_MS = 300;
 export const LOAD_TIMEOUT = { timeout: 5000 };

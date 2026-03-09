@@ -4,8 +4,8 @@ import type { DataRefresh } from "@/types/logs";
 
 export const ENDPOINTS = {
   health: "/api/health",
-  geoPoints: "/api/complaints/geo/points",
-  lastRefresh: "/api/complaints/geo/last-refresh",
+  geoPoints: "/api/complaints/geopoints",
+  lastRefresh: "/api/refreshlogs/latest",
 } as const;
 
 export const FIXTURES = {
@@ -53,4 +53,3 @@ export const HTTP = {
   notFound: 404,
   serverError: 500,
 } as const satisfies Record<HttpLabel, HttpCode>;
-
