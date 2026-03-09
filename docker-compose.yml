@@ -23,8 +23,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/devdb
-      SPRING_DATASOURCE_USERNAME: ${DB_NAME:?DB_NAME is required}
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:?DB_NAME is required}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:?DB_USER is required}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
       SPRING_JPA_SHOW_SQL: "true"
@@ -50,8 +50,8 @@ services:
       DB_NAME: ${DB_NAME:?DB_NAME is required}
       DB_USER: ${DB_USER:?DB_USER is required}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      BATCH_SIZE: 1000
-      REFRESH_INTERVAL_SECONDS: 300
+      BATCH_SIZE: ${BATCH_SIZE:?BATCH_SIZE is required}
+      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS?REFRESH_INTERVAL_SECONDS is required}
       PYTHONUNBUFFERED: 1
     depends_on:
       db:
