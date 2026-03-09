@@ -19,6 +19,8 @@ import {
   diffMarkers,
   getFade,
   tryRefreshIcons,
+  setBgForTheme,
+  createTileLayer,
 } from "./lib/utils";
 import {
   NYC_CENTER,
@@ -54,7 +56,6 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
   const settings = useSettings();
   const [dark, setDark] = useState(isDark);
   const isDarkRef = useSyncRef(dark);
-
   const [loading, setLoading] = useState(true);
   const [isEmpty, setIsEmpty] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<GeoPoint | null>(null);
@@ -172,8 +173,8 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
     if (!refs.container.current || refs.map.current) return;
 
     refs.map.current = L.map(refs.container.current, MAP_OPTIONS).setView(NYC_CENTER, DEFAULT_ZOOM);
-    // setBgForTheme(refs.container.current, dark);
-    // refs.tileLayer.current = createTileLayer(dark).addTo(refs.map.current);
+    setBgForTheme(refs.container.current, dark);
+    refs.tileLayer.current = createTileLayer(dark).addTo(refs.map.current);
     refs.cluster.current = L.markerClusterGroup(CLUSTER_OPTIONS);
     refs.map.current.addLayer(refs.cluster.current);
 

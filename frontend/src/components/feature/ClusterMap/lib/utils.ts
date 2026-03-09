@@ -360,9 +360,9 @@ export function panTo(map: L.Map | null, latlng: L.LatLngExpression) {
   });
 }
 
-// export function setBgForTheme(el: HTMLElement | null, isDark: boolean) {
-//   if (el) el.style.background = isDark ? BG_DARK : BG_LIGHT;
-// }
+export function setBgForTheme(el: HTMLElement | null, isDark: boolean) {
+  if (el) el.style.background = isDark ? BG_DARK : BG_LIGHT;
+}
 
 export function diffMarkers(
   cluster: L.MarkerClusterGroup,
