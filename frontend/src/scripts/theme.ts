@@ -7,4 +7,4 @@ const resolved =
     : theme;
 document.documentElement.classList.add(resolved);
 
-export const isDark = () => false
+export const isDark = () => false;
