@@ -9,10 +9,9 @@ services:
 
   backend:
     build: ./backend
-    # only accessible to frontend via nginx proxy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/devdb
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:?DB_NAME is required}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:?DB_USER is required}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
@@ -28,25 +27,27 @@ services:
     environment:
       NYC_API_BASE_URL: https://data.cityofnewyork.us/resource/erm2-nwe9.json
       NYC_APP_TOKEN: ${NYC_APP_TOKEN:?NYC_APP_TOKEN is required}
+      DB_USER: ${DB_USER:?DB_USER is required}
       DB_HOST: ${DB_HOST:?DB_HOST is required}
       DB_PORT: ${DB_PORT:?DB_PORT is required}
       DB_NAME: ${DB_NAME:?DB_NAME is required}
-      DB_USER: ${DB_USER:?DB_USER is required}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      BATCH_SIZE: 1000
-      REFRESH_INTERVAL_SECONDS: 3600
+      BATCH_SIZE: ${BATCH_SIZE:?BATCH_SIZE is required}
+      BATCH_DELAY_SECONDS: ${BATCH_DELAY_SECONDS:?BATCH_DELAY_SECONDS is required}
+      REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:?REFRESH_INTERVAL_SECONDS is required}
+      PYTHONUNBUFFERED: 1
     depends_on:
       db:
         condition: service_healthy
-    restart: on-failure
+    restart: always
 
   db:
     image: mariadb:11
     environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
-      MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
       MARIADB_USER: ${DB_USER:?DB_USER is required}
+      MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
       MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
     volumes:
       - prod_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
