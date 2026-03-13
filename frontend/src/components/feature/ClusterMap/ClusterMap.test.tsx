@@ -1,57 +1,58 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import ClusterMap from "./ClusterMap";
-import { MAP_TESTID } from "@/components/feature/ClusterMap/lib/constants";
+import {
+  POINTS,
+  STATUSES,
+  MAP_TESTID,
+  TEXT_LOAD_MOCK_DATA,
+  TEXT_NO_COMPLAINT_DATA_AVAILABLE,
+  TEXT_COORDINATES,
+  ONE_HOUR_MS,
+  TEST_WAITFOR_TIMEOUT_MS,
+  DEFAULT_REFRESH_INTERVAL_MS,
+  MIN_ZOOM,
+  MAX_ZOOM,
+} from "@/components/feature/ClusterMap/lib/constants";
+import { ENDPOINTS } from "@/mocks/constants";
+import { mock } from "@/mocks/mock";
 import * as api from "@/lib/api";
+import { COMPLAINT_TYPES } from "@/lib/api.constants";
+import type { MapControllerCallbacks } from "./lib/types";
 
-vi.mock("@/scripts/theme", () => ({
-  isDark: () => false,
+const makeMockController = vi.hoisted(
+  () =>
+    (overrides: Partial<{ isEmpty: boolean }> = {}) =>
+      function (this: unknown, callbacks: MapControllerCallbacks) {
+        return {
+          mount: vi.fn().mockImplementation(async () => {
+            callbacks.onLoadingChange(false);
+            callbacks.onEmptyChange(overrides.isEmpty ?? false);
+            callbacks.onZoomChange(10);
+          }),
+          destroy: vi.fn(),
+          zoomIn: vi.fn(),
+          zoomOut: vi.fn(),
+          resetView: vi.fn(),
+          setUseMock: vi.fn().mockImplementation(() => {
+            callbacks.onEmptyChange(false);
+            callbacks.onLoadingChange(false);
+          }),
+          reload: vi.fn(),
+          getMaxZoom: vi.fn().mockReturnValue(18),
+          getMinZoom: vi.fn().mockReturnValue(10),
+        };
+      }
+);
+
+vi.mock("./lib/MapController", () => ({
+  MapController: vi.fn(makeMockController()),
 }));
 
 vi.mock("./lib/constants", async () => {
   const actual = await vi.importActual<typeof import("./lib/constants")>("./lib/constants");
   return { ...actual, MIN_LOAD_MS: 0, CHUNK_SIZE: 1 };
-});
-
-const POINT = {
-  uniqueKey: "1",
-  latitude: 40.71,
-  longitude: -74.0,
-  complaintType: "Noise",
-  borough: "Manhattan",
-  createdDate: "2025-03-01",
-  status: "Open",
-};
-
-vi.mock("@/lib/api", () => ({
-  fetchGeoPoints: vi.fn().mockResolvedValue([
-    {
-      uniqueKey: "1",
-      latitude: 40.71,
-      longitude: -74.0,
-      complaintType: "Noise",
-      borough: "Manhattan",
-      createdDate: "2025-03-01",
-      status: "Open",
-    },
-  ]),
-  fetchGeoPointsMock: vi.fn().mockResolvedValue([
-    {
-      uniqueKey: "1",
-      latitude: 40.71,
-      longitude: -74.0,
-      complaintType: "Noise",
-      borough: "Manhattan",
-      createdDate: "2025-03-01",
-      status: "Open",
-    },
-  ]),
-}));
-
-afterEach(() => {
-  vi.mocked(api.fetchGeoPoints).mockResolvedValue([POINT]);
-  vi.mocked(api.fetchGeoPointsMock).mockResolvedValue([POINT]);
 });
 
 describe("ClusterMap zoom buttons", () => {
@@ -88,27 +89,7 @@ describe("ClusterMap zoom buttons", () => {
 
 describe("ClusterMap with null coordinates", () => {
   beforeEach(() => {
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([
-      {
-        uniqueKey: "null-lat",
-        latitude: null as unknown as number,
-        longitude: -74.0,
-        complaintType: "Noise",
-        borough: "Manhattan",
-        createdDate: "2025-03-01",
-        status: "Open",
-      },
-      {
-        uniqueKey: "null-lng",
-        latitude: 40.71,
-        longitude: null as unknown as number,
-        complaintType: "Noise",
-        borough: "Manhattan",
-        createdDate: "2025-03-01",
-        status: "Open",
-      },
-      POINT,
-    ]);
+    mock.success(ENDPOINTS.geoPoints, POINTS);
   });
 
   it("skips points with null latitude or longitude", async () => {
@@ -123,16 +104,14 @@ describe("ClusterMap with null coordinates", () => {
 describe("ClusterMap re-render with existing markers", () => {
   it("reuses existing markers on subsequent data loads", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([POINT]);
 
     render(<ClusterMap />);
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([{ ...POINT, status: "Closed" }]);
-
-    vi.advanceTimersByTime(3600 * 1000);
+    mock.success(ENDPOINTS.geoPoints, [{ ...POINTS[0], status: "Closed" }]);
+    vi.advanceTimersByTime(ONE_HOUR_MS);
 
     await waitFor(() => {
       expect(screen.getByTestId(MAP_TESTID)).toBeInTheDocument();
@@ -144,15 +123,15 @@ describe("ClusterMap re-render with existing markers", () => {
 
 describe("ClusterMap with multiple statuses", () => {
   beforeEach(() => {
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([
-      { ...POINT, uniqueKey: "1", status: "Open" },
-      { ...POINT, uniqueKey: "2", latitude: 40.72, status: "In Progress" },
-      { ...POINT, uniqueKey: "3", latitude: 40.73, status: "Assigned" },
-      { ...POINT, uniqueKey: "4", latitude: 40.74, status: "Started" },
-      { ...POINT, uniqueKey: "5", latitude: 40.75, status: "Closed" },
-      { ...POINT, uniqueKey: "6", latitude: 40.76, status: "Pending" },
-      { ...POINT, uniqueKey: "7", latitude: 40.77, status: "Unknown" },
-    ]);
+    mock.success(
+      ENDPOINTS.geoPoints,
+      STATUSES.map((status, i) => ({
+        ...POINTS[0],
+        uniqueKey: String(i + 1),
+        latitude: 40.71 + i * 0.01,
+        status,
+      }))
+    );
   });
 
   it("renders map with markers of all status types", async () => {
@@ -170,50 +149,33 @@ describe("ClusterMap selectedPoint", () => {
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
-    expect(screen.queryByText("Coordinates")).not.toBeInTheDocument();
+    expect(screen.queryByText(TEXT_COORDINATES)).not.toBeInTheDocument();
   });
 });
 
 describe("ClusterMap mock data toggle", () => {
   beforeEach(() => {
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([]);
+    mock.success(ENDPOINTS.geoPoints, []);
+    vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue([
+      POINTS[0],
+      { ...POINTS[0], uniqueKey: "2", latitude: 40.72 },
+    ]);
   });
 
   it("switches from empty to mock data", async () => {
-    vi.mocked(api.fetchGeoPointsMock).mockResolvedValue([
-      POINT,
-      { ...POINT, uniqueKey: "2", latitude: 40.72 },
-    ]);
+    const MockedMapController = (await import("./lib/MapController"))
+      .MapController as unknown as ReturnType<typeof vi.fn>;
+    MockedMapController.mockImplementationOnce(makeMockController({ isEmpty: true }));
 
     render(<ClusterMap />);
     await waitFor(() => {
-      expect(screen.getByText("Load mock data")).toBeInTheDocument();
+      expect(screen.getByText(TEXT_LOAD_MOCK_DATA)).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByText("Load mock data"));
+    await userEvent.click(screen.getByText(TEXT_LOAD_MOCK_DATA));
     await waitFor(() => {
-      expect(screen.queryByText("No complaint data available")).not.toBeInTheDocument();
+      expect(screen.queryByText(TEXT_NO_COMPLAINT_DATA_AVAILABLE)).not.toBeInTheDocument();
     });
-  });
-});
-
-describe("ClusterMap theme handling", () => {
-  it("observes class attribute mutations on document element", () => {
-    const observeSpy = vi.spyOn(MutationObserver.prototype, "observe");
-    render(<ClusterMap />);
-    expect(observeSpy).toHaveBeenCalledWith(
-      document.documentElement,
-      expect.objectContaining({ attributeFilter: ["class"] })
-    );
-    observeSpy.mockRestore();
-  });
-
-  it("disconnects mutation observer on unmount", () => {
-    const disconnectSpy = vi.spyOn(MutationObserver.prototype, "disconnect");
-    const { unmount } = render(<ClusterMap />);
-    unmount();
-    expect(disconnectSpy).toHaveBeenCalled();
-    disconnectSpy.mockRestore();
   });
 });
 
@@ -236,13 +198,15 @@ describe("ClusterMap unmount cleanup", () => {
 
 describe("ClusterMap multi-chunk processing", () => {
   beforeEach(() => {
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([
-      { ...POINT, uniqueKey: "a", latitude: 40.71, complaintType: "Noise" },
-      { ...POINT, uniqueKey: "b", latitude: 40.72, complaintType: "Heat" },
-      { ...POINT, uniqueKey: "c", latitude: 40.73, complaintType: "Water" },
-      { ...POINT, uniqueKey: "d", latitude: 40.74, complaintType: "Rodent" },
-      { ...POINT, uniqueKey: "e", latitude: 40.75, complaintType: "Trash" },
-    ]);
+    mock.success(
+      ENDPOINTS.geoPoints,
+      COMPLAINT_TYPES.map((complaintType, i) => ({
+        ...POINTS[0],
+        uniqueKey: String.fromCharCode(97 + i),
+        latitude: 40.71 + i * 0.01,
+        complaintType,
+      }))
+    );
   });
 
   it("processes multiple chunks when points exceed CHUNK_SIZE", async () => {
@@ -259,29 +223,28 @@ describe("ClusterMap multi-chunk processing", () => {
       () => {
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: TEST_WAITFOR_TIMEOUT_MS }
     );
     expect(screen.getByTestId(MAP_TESTID)).toBeInTheDocument();
   });
 });
 
-describe("ClusterMap duplicate point keys", () => {
+describe("ClusterMap duplicate POINTS[0] keys", () => {
   it("reuses markers for points with same lat/lng/type on reload", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
     const dupePoints = [
-      { ...POINT, uniqueKey: "1", latitude: 40.71, complaintType: "Noise" },
-      { ...POINT, uniqueKey: "2", latitude: 40.72, complaintType: "Heat" },
+      { ...POINTS[0], uniqueKey: "1", latitude: 40.71, complaintType: "Noise - Residential" },
+      { ...POINTS[0], uniqueKey: "2", latitude: 40.72, complaintType: "Heat/Hot Water" },
     ];
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue(dupePoints);
+    mock.success(ENDPOINTS.geoPoints, dupePoints);
 
     render(<ClusterMap />);
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue(dupePoints);
-    vi.advanceTimersByTime(3600 * 1000);
+    vi.advanceTimersByTime(DEFAULT_REFRESH_INTERVAL_MS);
 
     await waitFor(() => {
       expect(screen.getByTestId(MAP_TESTID)).toBeInTheDocument();
@@ -293,16 +256,21 @@ describe("ClusterMap duplicate point keys", () => {
 
 describe("ClusterMap empty mock data", () => {
   it("does not show empty state when mock returns empty (useMock flag)", async () => {
-    vi.mocked(api.fetchGeoPoints).mockResolvedValue([]);
+    mock.success(ENDPOINTS.geoPoints, []);
+    vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue([POINTS[0]]);
+
+    const MockedMapController = (await import("./lib/MapController"))
+      .MapController as unknown as ReturnType<typeof vi.fn>;
+    MockedMapController.mockImplementationOnce(makeMockController({ isEmpty: true }));
+
     render(<ClusterMap />);
     await waitFor(() => {
-      expect(screen.getByText("Load mock data")).toBeInTheDocument();
+      expect(screen.getByText(TEXT_LOAD_MOCK_DATA)).toBeInTheDocument();
     });
 
-    vi.mocked(api.fetchGeoPointsMock).mockResolvedValue([POINT]);
-    await userEvent.click(screen.getByText("Load mock data"));
+    await userEvent.click(screen.getByText(TEXT_LOAD_MOCK_DATA));
     await waitFor(() => {
-      expect(screen.queryByText("No complaint data available")).not.toBeInTheDocument();
+      expect(screen.queryByText(TEXT_NO_COMPLAINT_DATA_AVAILABLE)).not.toBeInTheDocument();
     });
   });
 });

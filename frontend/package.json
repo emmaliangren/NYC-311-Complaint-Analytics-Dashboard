@@ -20,9 +20,11 @@
     "ci": "npm run typegen && npm run type-check && npm run lint && npm run test"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
     "@react-router/node": "^7.13.1",
     "@react-router/serve": "^7.13.1",
     "clsx": "^2.1.1",
+    "compression": "^1.8.1",
     "isbot": "^5",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",

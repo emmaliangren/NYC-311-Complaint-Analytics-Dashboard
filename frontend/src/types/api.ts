@@ -1,7 +1,42 @@
+export type Status =
+  | "Open"
+  | "Closed"
+  | "In Progress"
+  | "Assigned"
+  | "Started"
+  | "Pending"
+  | "default";
+
+export type Borough = "MANHATTAN" | "BROOKLYN" | "QUEENS" | "BRONX" | "STATEN ISLAND";
+
+export type ComplaintType =
+  | "Noise - Residential"
+  | "Noise - Commercial"
+  | "Noise - Street/Sidewalk"
+  | "Illegal Parking"
+  | "Blocked Driveway"
+  | "Heat/Hot Water"
+  | "Street Condition"
+  | "Water System"
+  | "Rodent"
+  | "Unsanitary Condition"
+  | "Traffic Signal Condition"
+  | "Homeless Encampment"
+  | "Graffiti"
+  | "Air Quality"
+  | "Sewer";
+
+export interface Neighbourhood {
+  name: string;
+  borough: Borough;
+  lat: number;
+  lng: number;
+  spread: number;
+  weight: number;
+}
+
 export type Method = "get" | "post" | "put" | "patch" | "delete";
-
 export type ServiceStatus = "ok" | "error";
-
 export type HttpLabel = "ok" | "created" | "badRequest" | "notFound" | "serverError";
 
 type Informational = 100;

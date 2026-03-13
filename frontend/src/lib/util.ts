@@ -1,5 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { COMPLAINT_TYPES, NEIGHBOURHOODS, TOTAL_MOCK_POINTS } from "./api.constants";
+import type { GeoPoint } from "@/types/geopoints";
+import { STATUSES } from "@/components/feature/ClusterMap/lib/constants";
 
 export const logError = (error: unknown) => {
   console.error(getError(error));
@@ -22,3 +25,67 @@ export const formatDate = (iso: string): string => {
   const d = new Date(iso);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
+
+// seeded PRNG (mulberry32) for deterministic mock data
+let _seed = 42;
+
+export const resetSeed = (s = 42) => {
+  _seed = s;
+};
+
+export const rng = (): number => {
+  _seed = (_seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+export const gauss = (stddev: number): number => {
+  const u = 1 - rng();
+  const v = rng();
+  return stddev * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+};
+
+export const pick = <T>(arr: readonly T[]): T => {
+  return arr[Math.floor(rng() * arr.length)];
+};
+
+export const randomDate = (): string => {
+  const now = new Date("2025-03-05");
+  const past = new Date("2024-09-01");
+  const ms = past.getTime() + rng() * (now.getTime() - past.getTime());
+  return new Date(ms).toISOString().slice(0, 10);
+};
+
+const totalWeight = NEIGHBOURHOODS.reduce((s, n) => s + n.weight, 0);
+const pickNeighbourhood = () => {
+  let r = rng() * totalWeight;
+  for (const n of NEIGHBOURHOODS) {
+    r -= n.weight;
+    if (r <= 0) return n;
+  }
+  return NEIGHBOURHOODS[NEIGHBOURHOODS.length - 1];
+};
+
+export const MOCK_POINTS: GeoPoint[] = Array.from({ length: TOTAL_MOCK_POINTS }, (_, i) => {
+  const n = pickNeighbourhood();
+
+  const isOutlier = rng() < 0.06;
+  const spread = isOutlier ? n.spread * 4.5 : n.spread;
+
+  const lat = n.lat + gauss(spread);
+  const lng = n.lng + gauss(spread * 1.1);
+
+  const colocated = rng() < 0.08;
+  const snapJitter = 0.00005;
+
+  return {
+    uniqueKey: String(i + 1),
+    latitude: colocated ? Math.round(lat / snapJitter) * snapJitter : lat,
+    longitude: colocated ? Math.round(lng / snapJitter) * snapJitter : lng,
+    complaintType: pick(COMPLAINT_TYPES),
+    borough: n.borough,
+    status: pick(STATUSES),
+    createdDate: randomDate(),
+  };
+});

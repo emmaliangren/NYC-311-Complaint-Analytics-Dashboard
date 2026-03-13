@@ -1,6 +1,5 @@
 export { default as Stat } from "./Stat";
 export { default as StatusDot } from "./StatusDot";
-export { default as Stars } from "./Stars";
 export { default as MapCard } from "./MapCard";
 export { default as DashboardFooter } from "./DashboardFooter";
 export { default as DashboardTitle } from "./DashboardTitle";
