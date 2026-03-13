@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchLastRefresh } from "@/lib/api";
 import type { DataRefresh } from "@/types/logs";
 import {
-  Stars,
   CornerGlow,
   PageBackground,
   PageContainer,
@@ -20,7 +19,6 @@ const Dashboard = () => {
 
   return (
     <PageBackground>
-      <Stars />
       <CornerGlow />
       <PageContainer>
         <DashboardHeader refresh={refresh} />

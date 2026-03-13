@@ -1,9 +1,9 @@
 import type { GeoPoint } from "@/types/geopoints";
 import type { HealthCheck } from "../types/api";
 import type { DataRefresh } from "@/types/logs";
-import { logError } from "./util";
-import { MOCK_POINTS } from "./api.constants";
+import { logError, MOCK_POINTS } from "./util";
 import { MOCK_REFRESH } from "./api.mocks";
+import { MOCK_DELAY_MS } from "./api.constants";
 
 export const checkHealth = async (): Promise<HealthCheck> => {
   try {
@@ -13,13 +13,13 @@ export const checkHealth = async (): Promise<HealthCheck> => {
     }
     return await response.json();
   } catch (error) {
-    logError(error);
+    // logError(error);
     return { status: "error" };
   }
 };
 
 export const fetchGeoPointsMock = async (): Promise<GeoPoint[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
   return MOCK_POINTS;
 };
 
@@ -39,13 +39,13 @@ export const fetchGeoPoints = async (params?: {
     if (!response.ok) throw new Error(`Failed to fetch geo points: ${response.status}`);
     return await response.json();
   } catch (error) {
-    logError(error);
+    // logError(error);
     return [];
   }
 };
 
 export const fetchLastRefreshMock = async (): Promise<DataRefresh | null> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
   return MOCK_REFRESH;
 };
 
@@ -55,7 +55,7 @@ export const fetchLastRefresh = async (): Promise<DataRefresh | null> => {
     if (!response.ok) throw new Error(`Failed to fetch last refresh: ${response.status}`);
     return await response.json();
   } catch (error) {
-    logError(error);
+    // logError(error);
     return null;
   }
 };

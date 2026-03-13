@@ -1,6 +1,6 @@
 import Loader from "@/components/ui/Loader";
-import type { LoadingOverlayProps } from "@/types/ClusterMap";
-import { LOADING_LABEL } from "@/components/feature/ClusterMap/lib/constants";
+import type { LoadingOverlayProps } from "./types";
+import { LOADING_LABEL } from "./constants";
 
 const LoadingOverlay = ({ visible, label = LOADING_LABEL }: LoadingOverlayProps) => (
   <div

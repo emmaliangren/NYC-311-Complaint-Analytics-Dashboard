@@ -8,7 +8,7 @@ interface MapWrapperProps {
 }
 
 const MapWrapper = ({ className, children }: MapWrapperProps) => (
-  <div data-testid={WRAPPER_TESTID} className={cn("relative h-[600px] w-full rounded", className)}>
+  <div className={cn("relative h-[600px] w-full rounded", className)} data-testid={WRAPPER_TESTID}>
     {children}
   </div>
 );

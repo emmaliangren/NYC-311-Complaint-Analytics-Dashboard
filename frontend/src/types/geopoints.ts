@@ -1,3 +1,5 @@
+import type { Status } from "./api";
+
 export interface GeoPoint {
   uniqueKey: string;
   latitude: number;
@@ -5,5 +7,5 @@ export interface GeoPoint {
   complaintType: string;
   borough: string;
   createdDate: string;
-  status: string;
+  status: Status;
 }

@@ -4,7 +4,9 @@ export default function Layout() {
   return (
     <div>
       <nav></nav>
-      <Outlet />
+      <main id="main-content">
+        <Outlet />
+      </main>
     </div>
   );
 }

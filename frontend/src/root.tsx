@@ -6,23 +6,16 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 import theme from "./scripts/theme.ts?raw";
 import type { Route } from "./+types/root";
 import "./styles/index.css";
 import type { ReactNode } from "react";
 // eslint-disable-next-line react-refresh/only-export-components
-export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap",
-  },
-];
+export const links: Route.LinksFunction = () => [];
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -30,6 +23,11 @@ export function Layout({ children }: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="description"
+          content="Explore 311 complaint patterns and response times across New York City using interactive maps and data visualizations."
+        />
+        <title>311 Complaint Patterns & Response Times</title>
         <Meta />
         <Links />
       </head>
