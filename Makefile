@@ -1,11 +1,14 @@
 .PHONY: help \
-	up down build restart logs ps \
+	up down build logs \
+	ps \
+	ports ports-kill ports-kill-frontend ports-kill-backend ports-kill-ingestor ports-kill-db \
+	restart restart-frontend restart-backend restart-ingestor restart-db \
 	prune clean nuke \
 	test test-frontend test-backend test-ingestor \
 	lint lint-frontend lint-backend lint-ingestor lint-f-ingestor\
 	ci ci-frontend ci-backend ci-ingestor \
 	reports reports-frontend reports-backend reports-test-backend reports-jacoco-backend reports-ingestor reports-t-ingestor \
-	view-db \
+	db db-schema db-tables db-user db-count db-grants db-purge db-purge-complaints db-purge-refresh db-seed-refresh \
 	deploy deploy-up deploy-down deploy-build deploy-restart deploy-logs deploy-ps deploy-clean deploy-nuke \
 	files files-frontend files-backend files-ingestor \
 	deploy-files-frontend deploy-files-backend deploy-files-ingestor
@@ -17,8 +20,21 @@ help:
 	@echo "  up                          docker compose up -d"
 	@echo "  down                        docker compose down"
 	@echo "  build                       docker compose up --build -d"
-	@echo "  restart                     docker compose restart"
+	@echo ""
 	@echo "  ps                          docker compose ps"
+	@echo ""
+	@echo "  ports                       show all open ports"
+	@echo "  ports-kill                  stop all services and free all ports"
+	@echo "  ports-kill-frontend         stop frontend and free port 3000"
+	@echo "  ports-kill-backend          stop backend and free port 8080"
+	@echo "  ports-kill-ingestor         stop ingestor and free port 8001"
+	@echo "  ports-kill-db               stop database and free port 3306"
+	@echo ""
+	@echo "  restart                     docker compose restart"
+	@echo "  restart-frontend            restart frontend service"
+	@echo "  restart-backend             restart backend service"
+	@echo "  restart-ingestor            restart ingestor service"
+	@echo "  restart-db                  restart database service"
 	@echo ""
 	@echo "  logs                        docker compose logs -f"
 	@echo "  logs-frontend               tail frontend logs"
@@ -61,7 +77,12 @@ help:
 	@echo "  db-grants                   show grants for dev user (requires root)"
 	@echo "  db-status                   show database status"
 	@echo "  db-count                    row counts for all tables"
+	@echo "  db-refresh           		 show last 10 refresh logs"
 	@echo "  db-recent-refresh           show last 5 refresh logs"
+	@echo "  db-purge                    truncate all tables"
+	@echo "  db-purge-complaints         truncate complaints table"
+	@echo "  db-purge-refresh            truncate data_refresh_log table"
+	@echo "  db-seed-refresh             insert a fake SUCCESS refresh log row"
 	@echo ""
 	@echo "  deploy                      build and start production stack"
 	@echo "  deploy-up                   start production stack (no build)"
@@ -90,10 +111,32 @@ down:
 	docker compose down
 build:
 	docker compose up --build -d
-restart:
-	docker compose restart
+
 ps:
 	docker compose ps
+ports:
+	docker compose ps --format "table {{.Name}}\t{{.Ports}}"
+ports-kill:
+	docker compose down
+ports-kill-frontend:
+	docker compose stop frontend
+ports-kill-backend:
+	docker compose stop backend
+ports-kill-ingestor:
+	docker compose stop ingestor
+ports-kill-db:
+	docker compose stop db
+
+restart:
+	docker compose restart
+restart-frontend:
+	docker compose restart frontend
+restart-backend:
+	docker compose restart backend
+restart-ingestor:
+	docker compose restart ingestor
+restart-db:
+	docker compose restart db
 
 logs:
 	docker compose logs -f
@@ -119,6 +162,8 @@ test-frontend:
 test-backend:
 	docker compose exec backend ./gradlew test
 test-ingestor:
+	docker compose --profile test run --rm ingestor-test
+test-ingestor2:
 	docker compose exec ingestor pytest
 
 lint: lint-frontend lint-backend lint-ingestor
@@ -173,8 +218,18 @@ db-status:
 	docker compose exec db mariadb -udev -pdev -e "SHOW STATUS LIKE 'Threads_connected'; SHOW STATUS LIKE 'Uptime'; SHOW STATUS LIKE 'Questions';"
 db-count:
 	docker compose exec db mariadb -udev -pdev devdb -e "SELECT COUNT(*) AS complaints FROM complaints; SELECT COUNT(*) AS refreshes FROM data_refresh_log;"
+db-refresh:
+	docker compose exec db mariadb -udev -pdev devdb -e "SELECT * FROM data_refresh_log ORDER BY refresh_completed_at DESC LIMIT 10;"
 db-recent-refresh:
 	docker compose exec db mariadb -udev -pdev devdb -e "SELECT * FROM data_refresh_log ORDER BY refresh_completed_at DESC LIMIT 5;"
+db-purge-complaints:
+	docker compose exec db mariadb -udev -pdev devdb -e "TRUNCATE TABLE complaints;"
+db-purge-refresh:
+	docker compose exec db mariadb -udev -pdev devdb -e "TRUNCATE TABLE data_refresh_log;"
+db-purge:
+	docker compose exec db mariadb -udev -pdev devdb -e "TRUNCATE TABLE complaints; TRUNCATE TABLE data_refresh_log;"
+db-seed-refresh:
+	docker compose exec db mariadb -udev -pdev devdb -e "INSERT INTO data_refresh_log (refresh_started_at, refresh_completed_at, records_processed, status) VALUES (NOW(), NOW(), 999, 'SUCCESS');"
 
 deploy:
 	docker compose -f docker-compose.deploy.yml up --build -d

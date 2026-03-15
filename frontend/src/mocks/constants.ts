@@ -1,10 +1,12 @@
 import type { GeoPoint } from "@/types/geopoints";
 import type { HealthCheck, ServiceStatus, HttpLabel, HttpCode } from "../types/api";
 import type { DataRefresh } from "@/types/logs";
+import type { FilterOptionsResponse } from "@/types/ClusterMap";
 
 export const ENDPOINTS = {
   health: "/api/health",
   geoPoints: "/api/complaints/geopoints",
+  filterOptions: "/api/complaints/filter-options",
   lastRefresh: "/api/refreshlogs/latest",
 } as const;
 
@@ -19,8 +21,8 @@ export const FIXTURES = {
         uniqueKey: "1",
         latitude: 40.7128,
         longitude: -74.006,
-        complaintType: "Noise",
-        borough: "Manhattan",
+        complaintType: "Noise - Residential",
+        borough: "MANHATTAN",
         createdDate: "2025-03-01",
         status: "Open",
       },
@@ -28,8 +30,8 @@ export const FIXTURES = {
         uniqueKey: "2",
         latitude: 40.6782,
         longitude: -73.9442,
-        complaintType: "Pothole",
-        borough: "Brooklyn",
+        complaintType: "Street Condition",
+        borough: "BROOKLYN",
         createdDate: "2025-03-02",
         status: "Closed",
       },
@@ -38,11 +40,40 @@ export const FIXTURES = {
   },
   lastRefresh: {
     ok: {
-      refreshCompletedAt: "2025-03-04T12:00:00Z",
+      refreshStartedAt: new Date().toISOString(),
+      refreshCompletedAt: new Date().toISOString(),
       recordsProcessed: 1500,
       status: "completed",
     } satisfies DataRefresh,
     empty: null,
+  },
+  filterOptions: {
+    ok: {
+      complaintTypes: [
+        "Noise - Residential",
+        "Noise - Commercial",
+        "Noise - Street/Sidewalk",
+        "Illegal Parking",
+        "Blocked Driveway",
+        "Heat/Hot Water",
+        "Street Condition",
+        "Water System",
+        "Rodent",
+        "Unsanitary Condition",
+        "Traffic Signal Condition",
+        "Homeless Encampment",
+        "Graffiti",
+        "Air Quality",
+        "Sewer",
+      ],
+      boroughs: ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"],
+      statuses: ["Open", "Closed", "In Progress", "Assigned", "Started", "Pending"],
+    } satisfies FilterOptionsResponse,
+    empty: {
+      complaintTypes: [],
+      boroughs: [],
+      statuses: [],
+    } satisfies FilterOptionsResponse,
   },
 } as const;
 

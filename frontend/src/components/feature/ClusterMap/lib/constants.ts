@@ -10,8 +10,12 @@ export const NYC_BOUNDS: L.LatLngBoundsExpression = [
 
 export const LOAD_START = 0;
 
+export const INITIAL_LOAD_TIMEOUT_MS = 15_000;
+
 export const MAX_ZOOM = 18;
 export const MIN_ZOOM = 10;
+
+export const TEN_SECONDS = 10_000;
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 3600;
 export const DEFAULT_REFRESH_INTERVAL_MS = DEFAULT_REFRESH_INTERVAL_SECONDS * 1000;
 export const REFRESH_INTERVAL =
@@ -96,7 +100,7 @@ export const POINTS: GeoPoint[] = [
 export const POINT = POINTS[0];
 
 export const TEXT_LOAD_MOCK_DATA = "Load mock data";
-export const TEXT_NO_COMPLAINT_DATA_AVAILABLE = "No complaint data available";
+export const TEXT_NO_COMPLAINT_DATA_AVAILABLE = "No complaints match.";
 export const TEXT_COORDINATES = "Coordinates";
 export const THEME_MUTATION_ATTR = "class";
 export const ONE_HOUR_MS = 3_600_000;

@@ -1,7 +1,12 @@
 import type { Borough, ComplaintType, Neighbourhood, Status } from "@/types/api";
 
+export const API_HEALTH_URL = "/api/health";
+export const API_GEO_POINTS_URL = "/api/complaints/geopoints";
+export const API_FILTER_OPTIONS_URL = "/api/complaints/filter-options";
+export const API_LAST_REFRESH_URL = "/api/refreshlogs/latest";
+
 export const TOTAL_MOCK_POINTS = 1800;
-export const MOCK_DELAY_MS = 0;
+export const MOCK_DELAY_MS = 500;
 
 export const COMPLAINT_TYPES: ComplaintType[] = [
   "Noise - Residential",
@@ -37,58 +42,7 @@ export const STATUSES: Status[] = [
 
 export const BOROUGHS: Borough[] = ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"];
 
-const MANHATTAN: Neighbourhood[] = [
-  { name: "Midtown", borough: "MANHATTAN", lat: 40.7549, lng: -73.984, spread: 0.018, weight: 18 },
-  {
-    name: "Lower East Side",
-    borough: "MANHATTAN",
-    lat: 40.7157,
-    lng: -73.9863,
-    spread: 0.012,
-    weight: 14,
-  },
-  { name: "Harlem", borough: "MANHATTAN", lat: 40.8116, lng: -73.9465, spread: 0.016, weight: 13 },
-  {
-    name: "Washington Heights",
-    borough: "MANHATTAN",
-    lat: 40.8448,
-    lng: -73.9393,
-    spread: 0.014,
-    weight: 10,
-  },
-  {
-    name: "Upper West Side",
-    borough: "MANHATTAN",
-    lat: 40.787,
-    lng: -73.9754,
-    spread: 0.013,
-    weight: 10,
-  },
-  {
-    name: "Greenwich Village",
-    borough: "MANHATTAN",
-    lat: 40.7336,
-    lng: -74.0027,
-    spread: 0.01,
-    weight: 9,
-  },
-  {
-    name: "Financial District",
-    borough: "MANHATTAN",
-    lat: 40.7074,
-    lng: -74.0113,
-    spread: 0.009,
-    weight: 7,
-  },
-  {
-    name: "East Village",
-    borough: "MANHATTAN",
-    lat: 40.7265,
-    lng: -73.9815,
-    spread: 0.009,
-    weight: 8,
-  },
-];
+const MANHATTAN: Neighbourhood[] = [];
 
 const BROOKLYN: Neighbourhood[] = [
   {

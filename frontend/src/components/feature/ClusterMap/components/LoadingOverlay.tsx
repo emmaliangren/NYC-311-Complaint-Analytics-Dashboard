@@ -1,6 +1,6 @@
 import Loader from "@/components/ui/Loader";
-import type { LoadingOverlayProps } from "./types";
 import { LOADING_LABEL } from "./constants";
+import type { LoadingOverlayProps } from "./types";
 
 const LoadingOverlay = ({ visible, label = LOADING_LABEL }: LoadingOverlayProps) => (
   <div

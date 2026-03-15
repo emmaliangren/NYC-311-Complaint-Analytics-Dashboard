@@ -17,12 +17,17 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.ArgumentMatchers;
+import static org.mockito.ArgumentMatchers.any;
+import org.springframework.data.jpa.domain.Specification;
 
 @WebMvcTest(GeoController.class)
 class GeoControllerTest {
 
   private static final String GEO_POINTS_URL = "/api/complaints/geopoints";
   private static final String GEO_POINTS_UNKNOWN_URL = "/api/complaints/geopoints/unknown";
+
+  private static final String FILTER_OPTIONS_URL = "/api/complaints/filter-options";
 
   private static final String KEY_1 = "1";
   private static final String KEY_2 = "2";
@@ -55,7 +60,7 @@ class GeoControllerTest {
 
   @Test
   void getGeoPoints_returnsCorrectJsonShape() throws Exception {
-    when(complaintRepository.findAllWithCoordinates())
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
         .thenReturn(
             List.of(
                 TestFixtures.complaint(
@@ -90,7 +95,7 @@ class GeoControllerTest {
 
   @Test
   void getGeoPoints_returnsEmptyArray() throws Exception {
-    when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any())).thenReturn(Collections.emptyList());
 
     mockMvc
         .perform(get(GEO_POINTS_URL))
@@ -100,7 +105,7 @@ class GeoControllerTest {
 
   @Test
   void getGeoPoints_returnsJsonContentType() throws Exception {
-    when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any())).thenReturn(Collections.emptyList());
 
     mockMvc
         .perform(get(GEO_POINTS_URL))
@@ -122,7 +127,7 @@ class GeoControllerTest {
               DATE_1,
               STATUS_OPEN));
     }
-    when(complaintRepository.findAllWithCoordinates()).thenReturn(large);
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any())).thenReturn(large);
 
     mockMvc
         .perform(get(GEO_POINTS_URL))
@@ -132,7 +137,7 @@ class GeoControllerTest {
 
   @Test
   void getGeoPoints_dateFormattedAsYyyyMmDd() throws Exception {
-    when(complaintRepository.findAllWithCoordinates())
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
         .thenReturn(
             List.of(
                 TestFixtures.complaint(
@@ -152,13 +157,129 @@ class GeoControllerTest {
 
   @Test
   void getGeoPoints_excludesRecordsWithNullCoordinates() throws Exception {
-    when(complaintRepository.findAllWithCoordinates()).thenReturn(Collections.emptyList());
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any())).thenReturn(Collections.emptyList());
 
     mockMvc
         .perform(get(GEO_POINTS_URL))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
   }
+
+  @Test
+  void getFilterOptions_returnsCorrectShape() throws Exception {
+    when(complaintRepository.findDistinctComplaintTypes())
+        .thenReturn(List.of(TYPE_NOISE, TYPE_POTHOLE));
+    when(complaintRepository.findDistinctBoroughs())
+        .thenReturn(List.of(BOROUGH_MANHATTAN, BOROUGH_BROOKLYN));
+    when(complaintRepository.findDistinctStatuses())
+        .thenReturn(List.of(STATUS_OPEN, STATUS_CLOSED));
+
+    mockMvc
+        .perform(get(FILTER_OPTIONS_URL))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.complaintTypes", hasSize(2)))
+        .andExpect(jsonPath("$.complaintTypes", contains(TYPE_NOISE, TYPE_POTHOLE)))
+        .andExpect(jsonPath("$.boroughs", hasSize(2)))
+        .andExpect(jsonPath("$.boroughs", contains(BOROUGH_MANHATTAN, BOROUGH_BROOKLYN)))
+        .andExpect(jsonPath("$.statuses", hasSize(2)))
+        .andExpect(jsonPath("$.statuses", contains(STATUS_OPEN, STATUS_CLOSED)));
+  }
+
+  @Test
+  void getFilterOptions_returnsEmptyArrays() throws Exception {
+    when(complaintRepository.findDistinctComplaintTypes()).thenReturn(Collections.emptyList());
+    when(complaintRepository.findDistinctBoroughs()).thenReturn(Collections.emptyList());
+    when(complaintRepository.findDistinctStatuses()).thenReturn(Collections.emptyList());
+
+    mockMvc
+        .perform(get(FILTER_OPTIONS_URL))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.complaintTypes", hasSize(0)))
+        .andExpect(jsonPath("$.boroughs", hasSize(0)))
+        .andExpect(jsonPath("$.statuses", hasSize(0)));
+  }
+
+  // --- Filter parameter cases ---
+
+  @Test
+void getGeoPoints_filterByComplaintType_returnsOnlyMatchingComplaints() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL).param("complaintType", TYPE_NOISE))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].complaintType").value(TYPE_NOISE));
+}
+
+@Test
+void getGeoPoints_filterByBorough_returnsOnlyMatchingComplaints() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL).param("borough", BOROUGH_MANHATTAN))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].borough").value(BOROUGH_MANHATTAN));
+}
+
+@Test
+void getGeoPoints_filterByStatus_returnsOnlyMatchingComplaints() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL).param("status", STATUS_OPEN))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].status").value(STATUS_OPEN));
+}
+
+@Test
+void getGeoPoints_filterByDateFrom_returnsOnlyMatchingComplaints() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL).param("dateFrom", DATE_1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].createdDate").value(DATE_1));
+}
+
+@Test
+void getGeoPoints_filterByDateTo_returnsOnlyMatchingComplaints() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL).param("dateTo", DATE_1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)));
+}
+
+@Test
+void getGeoPoints_filterByComplaintTypeAndDateFrom_appliesAndLogic() throws Exception {
+    when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
+        .thenReturn(List.of(
+            TestFixtures.complaint(KEY_1, LAT_MANHATTAN, LNG_MANHATTAN, TYPE_NOISE, BOROUGH_MANHATTAN, DATE_1, STATUS_OPEN)));
+
+    mockMvc
+        .perform(get(GEO_POINTS_URL)
+            .param("complaintType", TYPE_NOISE)
+            .param("dateFrom", DATE_1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].complaintType").value(TYPE_NOISE))
+        .andExpect(jsonPath("$[0].createdDate").value(DATE_1));
+}
 
   // --- Error / edge cases ---
 
@@ -170,5 +291,10 @@ class GeoControllerTest {
   @Test
   void getGeoPoints_unknownPathReturns404() throws Exception {
     mockMvc.perform(get(GEO_POINTS_UNKNOWN_URL)).andExpect(status().isNotFound());
+  }
+
+  @Test
+  void getFilterOptions_methodNotAllowedForPost() throws Exception {
+    mockMvc.perform(post(FILTER_OPTIONS_URL)).andExpect(status().isMethodNotAllowed());
   }
 }

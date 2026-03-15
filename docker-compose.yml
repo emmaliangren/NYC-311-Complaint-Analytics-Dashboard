@@ -9,6 +9,7 @@ services:
       - /app/node_modules
     environment:
       VITE_BACKEND_URL: http://backend:8080
+      VITE_REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:?REFRESH_INTERVAL_SECONDS is required}
     depends_on:
       - backend
     ports:
@@ -47,12 +48,21 @@ services:
       DB_USER: ${DB_USER:?DB_USER is required}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       BATCH_SIZE: ${BATCH_SIZE:?BATCH_SIZE is required}
+      BATCH_DELAY_SECONDS: ${BATCH_DELAY_SECONDS:?BATCH_DELAY_SECONDS is required}
       REFRESH_INTERVAL_SECONDS: ${REFRESH_INTERVAL_SECONDS:?REFRESH_INTERVAL_SECONDS is required}
       PYTHONUNBUFFERED: 1
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+
+  ingestor-test:
+    build: ./ingestor
+    command: pytest
+    environment:
+      PYTHONUNBUFFERED: 1
+    profiles:
+      - test
 
   db:
     image: mariadb:11

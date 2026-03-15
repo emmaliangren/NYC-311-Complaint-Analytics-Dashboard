@@ -4,6 +4,7 @@ import { MAX_ZOOM, MIN_ZOOM } from "./constants";
 import { mock } from "@/mocks/mock";
 import { ENDPOINTS, FIXTURES } from "@/mocks/constants";
 import type { MapControllerCallbacks } from "./types";
+import type { GeoPoint } from "@/types/geopoints";
 
 const CONTAINER_WIDTH = "800px";
 const CONTAINER_HEIGHT = "600px";
@@ -70,10 +71,10 @@ describe("MapController lifecycle", () => {
   });
 
   it("destroy stops the refresh interval", async () => {
-    vi.useFakeTimers();
     const callbacks = makeCallbacks();
     controller = new MapController(callbacks);
     await controller.mount(container);
+    vi.useFakeTimers();
     controller.destroy();
     const callsBefore = (callbacks.onLoadingChange as ReturnType<typeof vi.fn>).mock.calls.length;
     vi.advanceTimersByTime(INTERVAL_ADVANCE_MS);
@@ -159,5 +160,99 @@ describe("MapController.debounce", () => {
     const fn = vi.fn();
     const debounced = MapController.debounce(fn, DEBOUNCE_MS);
     expect(() => debounced.cancel()).not.toThrow();
+  });
+});
+
+const BASE_POINT: GeoPoint = {
+  uniqueKey: "cf-1",
+  latitude: 40.71,
+  longitude: -74.0,
+  complaintType: "Noise",
+  borough: "Manhattan",
+  createdDate: "2025-06-15",
+  status: "Open",
+};
+
+const waitForEmpty = (callbacks: MapControllerCallbacks) =>
+  vi.waitFor(() => {
+    expect(callbacks.onEmptyChange).toHaveBeenCalledWith(true);
+  });
+
+describe("MapController.applyFilters — client-side filter branches", () => {
+  beforeEach(() => {
+    mock.success(ENDPOINTS.geoPoints, [BASE_POINT]);
+  });
+
+  it("borough mismatch marks map empty", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({ borough: "Brooklyn" });
+    await waitForEmpty(callbacks);
+  });
+
+  it("complaintType mismatch marks map empty", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({ complaintType: "Heat/Hot Water" });
+    await waitForEmpty(callbacks);
+  });
+
+  it("status mismatch marks map empty", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({ status: "Closed" });
+    await waitForEmpty(callbacks);
+  });
+
+  it("dateFrom after createdDate marks map empty", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({ dateFrom: "2025-12-01" });
+    await waitForEmpty(callbacks);
+  });
+
+  it("dateTo before createdDate marks map empty", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({ dateTo: "2025-01-01" });
+    await waitForEmpty(callbacks);
+  });
+
+  it("matching filters keep points visible", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({
+      borough: "Manhattan",
+      complaintType: "Noise",
+      status: "Open",
+      dateFrom: "2025-01-01",
+      dateTo: "2025-12-31",
+    });
+    await vi.waitFor(() => {
+      expect(callbacks.onEmptyChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("no filters applied passes all points through", async () => {
+    const callbacks = makeCallbacks();
+    controller = new MapController(callbacks);
+    await controller.mount(container);
+    (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
+    controller.applyFilters({});
+    await vi.waitFor(() => {
+      expect(callbacks.onEmptyChange).toHaveBeenCalledWith(false);
+    });
   });
 });
