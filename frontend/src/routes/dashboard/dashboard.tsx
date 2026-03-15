@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { fetchLastRefresh } from "@/lib/api";
-import type { DataRefresh } from "@/types/logs";
+import { useLoaderData } from "react-router";
+import { clientLoader } from "./dashboard.clientLoader";
+// eslint-disable-next-line react-refresh/only-export-components
+export { clientLoader };
 import {
   CornerGlow,
   PageBackground,
@@ -11,11 +12,7 @@ import {
 } from "./components";
 
 const Dashboard = () => {
-  const [refresh, setRefresh] = useState<DataRefresh | null>(null);
-
-  useEffect(() => {
-    fetchLastRefresh().then(setRefresh);
-  }, []);
+  const { refresh } = useLoaderData<typeof clientLoader>();
 
   return (
     <PageBackground>
@@ -23,7 +20,7 @@ const Dashboard = () => {
       <PageContainer>
         <DashboardHeader refresh={refresh} />
         <MapCard />
-        <DashboardFooter />
+        <DashboardFooter refresh={refresh} />
       </PageContainer>
     </PageBackground>
   );
