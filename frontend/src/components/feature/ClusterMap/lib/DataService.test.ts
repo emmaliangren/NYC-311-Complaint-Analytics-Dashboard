@@ -20,38 +20,63 @@ describe("DataService", () => {
     expect(api.fetchGeoPointsMock).toHaveBeenCalledOnce();
   });
 
-  it("returns [] and skips the network call when already fetching", async () => {
-    let resolve!: (v: typeof F.geoPoints.ok) => void;
-    vi.spyOn(api, "fetchGeoPoints").mockReturnValueOnce(
-      new Promise((r) => {
-        resolve = r as typeof resolve;
-      })
-    );
+  it("cancels the first request when a second call is made while fetching", async () => {
+    let resolveFirst!: (v: typeof F.geoPoints.ok) => void;
+
+    vi.spyOn(api, "fetchGeoPoints")
+      .mockReturnValueOnce(
+        new Promise((r) => {
+          resolveFirst = r as typeof resolveFirst;
+        })
+      )
+      .mockResolvedValueOnce(F.geoPoints.ok);
 
     const svc = new DataService();
     const first = svc.fetchPoints();
     const second = svc.fetchPoints();
 
-    resolve(F.geoPoints.ok);
+    resolveFirst(F.geoPoints.ok);
+
     const [r1, r2] = await Promise.all([first, second]);
 
-    expect(r1).toEqual(F.geoPoints.ok);
-    expect(r2).toEqual([]);
-    expect(api.fetchGeoPoints).toHaveBeenCalledOnce();
+    expect(r1).toBeNull();
+    expect(r2).toEqual(F.geoPoints.ok);
+    expect(api.fetchGeoPoints).toHaveBeenCalledTimes(2);
   });
 
-  it("resets isFetching after a successful fetch", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const svc = new DataService();
-    await svc.fetchPoints();
-    expect(svc.isFetching()).toBe(false);
-  });
-
-  it("resets isFetching after a failed fetch", async () => {
+  it("returns [] after a failed fetch", async () => {
     mock.offline(E.geoPoints);
     const svc = new DataService();
     const result = await svc.fetchPoints();
     expect(result).toEqual([]);
-    expect(svc.isFetching()).toBe(false);
+  });
+
+  it("returns null when cancelPending is called before the fetch resolves", async () => {
+    let resolveFirst!: (v: typeof F.geoPoints.ok) => void;
+    vi.spyOn(api, "fetchGeoPoints").mockReturnValueOnce(
+      new Promise((r) => {
+        resolveFirst = r as typeof resolveFirst;
+      })
+    );
+
+    const svc = new DataService();
+    const pending = svc.fetchPoints();
+    svc.cancelPending();
+    resolveFirst(F.geoPoints.ok);
+
+    expect(await pending).toBeNull();
+  });
+
+  it("resolves correctly after mock is toggled", async () => {
+    mock.success(E.geoPoints, F.geoPoints.ok);
+    vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue(F.geoPoints.ok);
+
+    const svc = new DataService();
+    svc.setUseMock(true);
+    expect(svc.getUseMock()).toBe(true);
+
+    const result = await svc.fetchPoints();
+    expect(result).toEqual(F.geoPoints.ok);
+    expect(api.fetchGeoPointsMock).toHaveBeenCalledOnce();
   });
 });

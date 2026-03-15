@@ -211,3 +211,79 @@ describe("MarkerManager.markerKey", () => {
     expect(a).not.toBe(b);
   });
 });
+
+describe("MarkerManager marker click event", () => {
+  it("pans map when getPanOnMarker returns true", async () => {
+    const panFn = vi.fn();
+    const map = {
+      getBounds: () => ({ contains: () => true }),
+      panTo: panFn,
+    } as unknown as L.Map;
+
+    const callbacks: MarkerManagerCallbacks = {
+      getColourByStatus: () => true,
+      getPanOnMarker: () => true,
+      getMap: () => map,
+    };
+    const manager = new MarkerManager(iconFactory, popupFactory, callbacks);
+    await manager.buildMarkers([POINT], makeCluster(), map, null);
+    const marker = [...manager.getMarkers().values()][0];
+    marker.fire("click");
+    expect(panFn).toHaveBeenCalled();
+  });
+
+  it("does not pan when getPanOnMarker returns false", async () => {
+    const panFn = vi.fn();
+    const map = {
+      getBounds: () => ({ contains: () => true }),
+      panTo: panFn,
+    } as unknown as L.Map;
+
+    const callbacks: MarkerManagerCallbacks = {
+      getColourByStatus: () => true,
+      getPanOnMarker: () => false,
+      getMap: () => map,
+    };
+    const manager = new MarkerManager(iconFactory, popupFactory, callbacks);
+    await manager.buildMarkers([POINT], makeCluster(), map, null);
+    const marker = [...manager.getMarkers().values()][0];
+    marker.fire("click");
+    expect(panFn).not.toHaveBeenCalled();
+  });
+
+  it("does not pan when getMap returns null", async () => {
+    const callbacks: MarkerManagerCallbacks = {
+      getColourByStatus: () => true,
+      getPanOnMarker: () => true,
+      getMap: () => null,
+    };
+    const manager = new MarkerManager(iconFactory, popupFactory, callbacks);
+    await manager.buildMarkers([POINT], makeCluster(), makeMap(), null);
+    const marker = [...manager.getMarkers().values()][0];
+    expect(() => marker.fire("click")).not.toThrow();
+  });
+});
+
+describe("MarkerManager.buildMarkers generation cancellation", () => {
+  it("cancels an in-flight build when a newer build starts", async () => {
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      setTimeout(() => cb(0), 0);
+      return 0;
+    });
+
+    const manager = new MarkerManager(iconFactory, popupFactory, makeCallbacks());
+    const cluster = makeCluster();
+    const map = makeMap();
+
+    const first = manager.buildMarkers([POINT_A], cluster, map, null);
+    const second = manager.buildMarkers([POINT_B], cluster, map, null);
+
+    await Promise.all([first, second]);
+
+    const keys = [...manager.getMarkers().keys()];
+    expect(keys).toHaveLength(1);
+    expect(keys[0]).toContain(POINT_B.complaintType);
+
+    vi.restoreAllMocks();
+  });
+});

@@ -16,6 +16,7 @@ const MultiShadow = ({ size = "md" }: { size?: LoaderSize }) => (
     />
   </div>
 );
+/* HTML: <div class="loader"></div> */
 
 /**
  * loader

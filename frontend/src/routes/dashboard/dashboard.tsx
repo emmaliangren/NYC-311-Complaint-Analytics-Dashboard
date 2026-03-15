@@ -10,20 +10,32 @@ import {
   MapCard,
   DashboardFooter,
 } from "./components";
+import { useEffect, useState } from "react";
+import { fetchLastRefresh } from "@/lib/api";
 
 const Dashboard = () => {
-  const { refresh } = useLoaderData<typeof clientLoader>();
+  const { refresh: initialRefresh } = useLoaderData<typeof clientLoader>();
+  const [refresh, setRefresh] = useState(initialRefresh);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const latest = await fetchLastRefresh();
+      if (latest && latest.refreshCompletedAt !== refresh?.refreshCompletedAt) {
+        setRefresh(latest);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refresh?.refreshCompletedAt]);
 
   return (
     <PageBackground>
       <CornerGlow />
       <PageContainer>
-        <DashboardHeader refresh={refresh} />
+        <DashboardHeader />
         <MapCard />
         <DashboardFooter refresh={refresh} />
       </PageContainer>
     </PageBackground>
   );
 };
-
 export default Dashboard;

@@ -12,6 +12,7 @@ import type { MarkerManagerCallbacks } from "./types";
  */
 export class MarkerManager {
   private markers = new Map<string, L.Marker>();
+  private buildGeneration = 0;
   private geoPointMap = new WeakMap<L.Marker, GeoPoint>();
   private iconFactory: IconFactory;
   private popupFactory: PopupFactory;
@@ -51,6 +52,8 @@ export class MarkerManager {
     map: L.Map,
     clusterPane: HTMLElement | null
   ): Promise<void> {
+    const generation = ++this.buildGeneration;
+
     return new Promise((resolve) => {
       hidePaneImmediately(clusterPane);
 
@@ -60,6 +63,11 @@ export class MarkerManager {
       const colourByStatus = this.callbacks.getColourByStatus();
 
       const processChunk = () => {
+        if (generation !== this.buildGeneration) {
+          resolve();
+          return;
+        }
+
         const end = Math.min(i + CHUNK_SIZE, points.length);
 
         for (; i < end; i++) {

@@ -1,15 +1,14 @@
+import Button from "@/components/ui/Button";
 import { Link } from "react-router";
-import Button from "@/components/ui/Button/Button";
 
 const BackButton = () => (
-  <Button aria-label="Go to home" variant="icon">
+  <Button aria-label="Go to home" variant="icon" title="Go Home">
     <Link
       to="/"
-      className="text-slate-400 hover:text-slate-900 transition-colors"
+      className="text-slate-400 text-4xl leading-none hover:text-slate-900 transition-colors"
       aria-label="Back to home"
-      style={{ fontSize: "2.5rem", lineHeight: 1 }}
     >
-      ←
+      <span>←</span>
     </Link>
   </Button>
 );

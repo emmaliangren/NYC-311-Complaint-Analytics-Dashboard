@@ -1,11 +1,9 @@
-import type { GeoPoint } from "@/types/geopoints";
 import { fetchGeoPoints, fetchGeoPointsMock } from "@/lib/api";
+import type { GeoPoint } from "@/types/geopoints";
+import type { FilterParams } from "./types";
 
-/**
- * encapsulates data-fetching logic and guards against concurrent requests.
- */
 export class DataService {
-  private fetching = false;
+  private abortController: AbortController | null = null;
   private useMock: boolean;
 
   constructor(useMock = false) {
@@ -20,19 +18,29 @@ export class DataService {
     return this.useMock;
   }
 
-  isFetching(): boolean {
-    return this.fetching;
-  }
-
-  async fetchPoints(): Promise<GeoPoint[]> {
-    if (this.fetching) return [];
-    this.fetching = true;
+  /** Cancel any in-flight request and start a fresh one. */
+  async fetchPoints(params?: FilterParams): Promise<GeoPoint[] | null> {
+    // Cancel the previous fetch if still running
+    this.abortController?.abort();
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
 
     try {
-      const fetchFn = this.useMock ? fetchGeoPointsMock : fetchGeoPoints;
-      return await fetchFn();
-    } finally {
-      this.fetching = false;
+      const points = this.useMock
+        ? await fetchGeoPointsMock()
+        : await fetchGeoPoints(params, signal);
+
+      // If this request was superseded, signal the caller to ignore the result
+      if (signal.aborted) return null;
+      return points;
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return null;
+      throw err;
     }
+  }
+
+  cancelPending(): void {
+    this.abortController?.abort();
+    this.abortController = null;
   }
 }

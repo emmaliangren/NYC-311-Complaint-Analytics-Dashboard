@@ -1,15 +1,5 @@
-import type { IconType } from "react-icons";
-
 export interface EdgeFadeProps {
   colour: string;
-}
-
-export interface ZoomPanelProps {
-  zoomIn: () => void;
-  zoomOut: () => void;
-  resetView: () => void;
-  disableZoomIn: boolean;
-  disableZoomOut: boolean;
 }
 
 export interface TooltipProps {
@@ -17,7 +7,8 @@ export interface TooltipProps {
 }
 
 export interface EmptyStateProps {
-  onLoadMock: () => void;
+  onLoadMock?: () => void;
+  filtersActive?: boolean;
 }
 
 export interface LoadingOverlayProps {
@@ -25,13 +16,15 @@ export interface LoadingOverlayProps {
   label?: string;
 }
 
-type ZoomAction = "zoomIn" | "zoomOut";
-type DisabledKey = "disableZoomIn" | "disableZoomOut";
-
-export interface ZoomButtonConfig {
+export interface Filter {
   key: string;
-  icon: IconType;
-  action: ZoomAction;
-  disabledKey: DisabledKey;
-  ariaLabel: string;
+  label: string;
+  active: boolean;
+}
+
+export interface FilterPanelProps {
+  filters: Filter[];
+  onAddFilter: (key: string) => void;
+  onRemoveFilter: (key: string) => void;
+  onResetFilters: () => void;
 }

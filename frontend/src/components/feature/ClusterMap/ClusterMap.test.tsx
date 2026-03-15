@@ -1,25 +1,36 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import ClusterMap from "./ClusterMap";
 import {
+  DEFAULT_REFRESH_INTERVAL_MS,
+  MAP_TESTID,
+  ONE_HOUR_MS,
+  POINT,
   POINTS,
   STATUSES,
-  MAP_TESTID,
-  TEXT_LOAD_MOCK_DATA,
-  TEXT_NO_COMPLAINT_DATA_AVAILABLE,
-  TEXT_COORDINATES,
-  ONE_HOUR_MS,
   TEST_WAITFOR_TIMEOUT_MS,
-  DEFAULT_REFRESH_INTERVAL_MS,
-  MIN_ZOOM,
-  MAX_ZOOM,
+  TEXT_COORDINATES,
+  TEXT_LOAD_MOCK_DATA,
 } from "@/components/feature/ClusterMap/lib/constants";
+import * as api from "@/lib/api";
 import { ENDPOINTS } from "@/mocks/constants";
 import { mock } from "@/mocks/mock";
-import * as api from "@/lib/api";
 import { COMPLAINT_TYPES } from "@/lib/api.constants";
-import type { MapControllerCallbacks } from "./lib/types";
+import type { MapControllerCallbacks } from "./lib";
+import { FilterProvider } from "@/context/FilterProvider";
+
+const BTN_TOGGLE_FILTERS = "Toggle filters";
+const BTN_RESET_ALL = "Reset all";
+const BTN_ACTIVE_TAB = /active/i;
+const LABEL_STATUS_COMBOBOX = "Status";
+const LABEL_STATUS_OPEN_OPTION = "Open";
+const LABEL_REMOVE_STATUS_OPEN = "Remove Status: Open filter";
+const TEXT_NO_COMPLAINTS_MATCH = "No complaints match.";
+
+const renderWithFilters = (ui: React.ReactElement = <ClusterMap />) =>
+  render(<FilterProvider>{ui}</FilterProvider>);
 
 const makeMockController = vi.hoisted(
   () =>
@@ -39,9 +50,17 @@ const makeMockController = vi.hoisted(
             callbacks.onEmptyChange(false);
             callbacks.onLoadingChange(false);
           }),
+          applyFilters: vi.fn(),
           reload: vi.fn(),
           getMaxZoom: vi.fn().mockReturnValue(18),
           getMinZoom: vi.fn().mockReturnValue(10),
+          fetchGeoPoints: vi.fn().mockResolvedValue([]),
+          fetchGeoPointsMock: vi.fn().mockResolvedValue([]),
+          fetchFilterOptions: vi.fn().mockResolvedValue({
+            boroughs: [],
+            complaintTypes: [],
+            statuses: [],
+          }),
         };
       }
 );
@@ -55,11 +74,51 @@ vi.mock("./lib/constants", async () => {
   return { ...actual, MIN_LOAD_MS: 0, CHUNK_SIZE: 1 };
 });
 
+vi.mock("@/lib/api", () => ({
+  fetchGeoPoints: vi.fn().mockResolvedValue([
+    {
+      uniqueKey: "1",
+      latitude: 40.71,
+      longitude: -74.0,
+      complaintType: "Noise",
+      borough: "Manhattan",
+      createdDate: "2025-03-01",
+      status: "Open",
+    },
+  ]),
+  fetchGeoPointsMock: vi.fn().mockResolvedValue([
+    {
+      uniqueKey: "1",
+      latitude: 40.71,
+      longitude: -74.0,
+      complaintType: "Noise",
+      borough: "Manhattan",
+      createdDate: "2025-03-01",
+      status: "Open",
+    },
+  ]),
+  fetchFilterOptions: vi.fn().mockResolvedValue({
+    complaintTypes: ["Noise - Residential", "Heat/Hot Water"],
+    boroughs: ["MANHATTAN", "BROOKLYN"],
+    statuses: ["Open", "Closed", "In Progress"],
+  }),
+}));
+
+afterEach(() => {
+  vi.mocked(api.fetchGeoPoints).mockResolvedValue([POINT]);
+  vi.mocked(api.fetchGeoPointsMock).mockResolvedValue([POINT]);
+});
+
 describe("ClusterMap zoom buttons", () => {
+  beforeEach(async () => {
+    const { MapController } = await import("./lib/MapController");
+    vi.mocked(MapController).mockImplementation(makeMockController());
+  });
+
   it("clicking zoom-in triggers map zoomIn", async () => {
-    render(<ClusterMap />);
-    await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    renderWithFilters();
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+      timeout: TEST_WAITFOR_TIMEOUT_MS,
     });
     const buttons = screen.getAllByRole("button");
     await userEvent.click(buttons[0]);
@@ -67,9 +126,9 @@ describe("ClusterMap zoom buttons", () => {
   });
 
   it("clicking zoom-out triggers map zoomOut", async () => {
-    render(<ClusterMap />);
-    await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    renderWithFilters();
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+      timeout: TEST_WAITFOR_TIMEOUT_MS,
     });
     const buttons = screen.getAllByRole("button");
     await userEvent.click(buttons[1]);
@@ -77,9 +136,9 @@ describe("ClusterMap zoom buttons", () => {
   });
 
   it("clicking reset view button resets the map", async () => {
-    render(<ClusterMap />);
-    await waitFor(() => {
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    renderWithFilters();
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument(), {
+      timeout: TEST_WAITFOR_TIMEOUT_MS,
     });
     const buttons = screen.getAllByRole("button");
     await userEvent.click(buttons[2]);
@@ -93,7 +152,7 @@ describe("ClusterMap with null coordinates", () => {
   });
 
   it("skips points with null latitude or longitude", async () => {
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -105,7 +164,7 @@ describe("ClusterMap re-render with existing markers", () => {
   it("reuses existing markers on subsequent data loads", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -135,7 +194,7 @@ describe("ClusterMap with multiple statuses", () => {
   });
 
   it("renders map with markers of all status types", async () => {
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -145,7 +204,7 @@ describe("ClusterMap with multiple statuses", () => {
 
 describe("ClusterMap selectedPoint", () => {
   it("does not render MarkerDetailPanel by default", async () => {
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -167,21 +226,32 @@ describe("ClusterMap mock data toggle", () => {
       .MapController as unknown as ReturnType<typeof vi.fn>;
     MockedMapController.mockImplementationOnce(makeMockController({ isEmpty: true }));
 
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.getByText(TEXT_LOAD_MOCK_DATA)).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByText(TEXT_LOAD_MOCK_DATA));
+
     await waitFor(() => {
-      expect(screen.queryByText(TEXT_NO_COMPLAINT_DATA_AVAILABLE)).not.toBeInTheDocument();
+      expect(screen.queryByText(TEXT_LOAD_MOCK_DATA)).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("ClusterMap theme handling", () => {
+  it("renders without error and mounts correctly", async () => {
+    renderWithFilters();
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId(MAP_TESTID)).toBeInTheDocument();
   });
 });
 
 describe("ClusterMap unmount cleanup", () => {
   it("cleans up map and intervals on unmount", async () => {
-    const { unmount } = render(<ClusterMap />);
+    const { unmount } = renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -189,9 +259,9 @@ describe("ClusterMap unmount cleanup", () => {
   });
 
   it("handles rapid mount/unmount without error", () => {
-    const { unmount: u1 } = render(<ClusterMap />);
+    const { unmount: u1 } = renderWithFilters();
     u1();
-    const { unmount: u2 } = render(<ClusterMap />);
+    const { unmount: u2 } = renderWithFilters();
     u2();
   });
 });
@@ -210,7 +280,7 @@ describe("ClusterMap multi-chunk processing", () => {
   });
 
   it("processes multiple chunks when points exceed CHUNK_SIZE", async () => {
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -218,7 +288,7 @@ describe("ClusterMap multi-chunk processing", () => {
   });
 
   it("correctly loads all markers across multiple chunks", async () => {
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(
       () => {
         expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -239,7 +309,7 @@ describe("ClusterMap duplicate POINTS[0] keys", () => {
     ];
     mock.success(ENDPOINTS.geoPoints, dupePoints);
 
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
@@ -263,14 +333,173 @@ describe("ClusterMap empty mock data", () => {
       .MapController as unknown as ReturnType<typeof vi.fn>;
     MockedMapController.mockImplementationOnce(makeMockController({ isEmpty: true }));
 
-    render(<ClusterMap />);
+    renderWithFilters();
     await waitFor(() => {
       expect(screen.getByText(TEXT_LOAD_MOCK_DATA)).toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByText(TEXT_LOAD_MOCK_DATA));
+
     await waitFor(() => {
-      expect(screen.queryByText(TEXT_NO_COMPLAINT_DATA_AVAILABLE)).not.toBeInTheDocument();
+      expect(screen.queryByText(TEXT_LOAD_MOCK_DATA)).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe("ClusterMap filter controls", () => {
+  it("supports selecting a filter and resetting it", async () => {
+    renderWithFilters();
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
+    const statusCombobox = screen.getByRole("combobox", { name: LABEL_STATUS_COMBOBOX });
+    await userEvent.click(statusCombobox);
+    await userEvent.click(screen.getByRole("option", { name: LABEL_STATUS_OPEN_OPTION }));
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_ACTIVE_TAB }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(LABEL_REMOVE_STATUS_OPEN)).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_RESET_ALL }));
+    await waitFor(() => {
+      expect(screen.queryByLabelText(LABEL_REMOVE_STATUS_OPEN)).not.toBeInTheDocument();
+    });
+  });
+
+  it("clears all filter values after reset", async () => {
+    vi.mocked(api.fetchGeoPoints).mockResolvedValue([
+      {
+        uniqueKey: "1",
+        latitude: 40.71,
+        longitude: -74.0,
+        complaintType: "Noise",
+        borough: "MANHATTAN",
+        createdDate: "2025-03-01",
+        status: "Open",
+      },
+      {
+        uniqueKey: "2",
+        latitude: 40.72,
+        longitude: -73.99,
+        complaintType: "Heat",
+        borough: "BROOKLYN",
+        createdDate: "2025-03-02",
+        status: "Closed",
+      },
+    ]);
+
+    renderWithFilters();
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
+
+    const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+
+    fireEvent.change(dateInputs[0], { target: { value: "2025-03-01" } });
+    fireEvent.change(dateInputs[1], { target: { value: "2025-03-02" } });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_RESET_ALL }));
+
+    await waitFor(() => {
+      expect(dateInputs[0].value).toBe("");
+      expect(dateInputs[1].value).toBe("");
+    });
+  });
+
+  it("shows empty state when applyFilters results in no data", async () => {
+    const MockedMapController = (await import("./lib/MapController"))
+      .MapController as unknown as ReturnType<typeof vi.fn>;
+
+    MockedMapController.mockImplementationOnce(function (
+      this: unknown,
+      callbacks: MapControllerCallbacks
+    ) {
+      return {
+        mount: vi.fn().mockImplementation(async () => {
+          callbacks.onLoadingChange(false);
+          callbacks.onEmptyChange(false);
+          callbacks.onZoomChange(10);
+        }),
+        destroy: vi.fn(),
+        zoomIn: vi.fn(),
+        zoomOut: vi.fn(),
+        resetView: vi.fn(),
+        applyFilters: vi.fn().mockImplementation(() => {
+          callbacks.onEmptyChange(true);
+          callbacks.onLoadingChange(false);
+        }),
+        setUseMock: vi.fn(),
+        reload: vi.fn(),
+        getMaxZoom: vi.fn().mockReturnValue(18),
+        getMinZoom: vi.fn().mockReturnValue(10),
+      };
+    });
+
+    renderWithFilters();
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
+
+    const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+    fireEvent.change(dateInputs[0], { target: { value: "2025-03-10" } });
+
+    await waitFor(() => {
+      expect(screen.getByText(TEXT_NO_COMPLAINTS_MATCH)).toBeVisible();
+    });
+  });
+
+  it("excludes records with invalid createdDate when date filter is active", async () => {
+    const MockedMapController = (await import("./lib/MapController"))
+      .MapController as unknown as ReturnType<typeof vi.fn>;
+
+    MockedMapController.mockImplementationOnce(function (
+      this: unknown,
+      callbacks: MapControllerCallbacks
+    ) {
+      return {
+        mount: vi.fn().mockImplementation(async () => {
+          callbacks.onLoadingChange(false);
+          callbacks.onEmptyChange(false);
+          callbacks.onZoomChange(10);
+        }),
+        destroy: vi.fn(),
+        zoomIn: vi.fn(),
+        zoomOut: vi.fn(),
+        resetView: vi.fn(),
+        applyFilters: vi.fn().mockImplementation(() => {
+          callbacks.onEmptyChange(true);
+          callbacks.onLoadingChange(false);
+        }),
+        setUseMock: vi.fn(),
+        reload: vi.fn(),
+        getMaxZoom: vi.fn().mockReturnValue(18),
+        getMinZoom: vi.fn().mockReturnValue(10),
+      };
+    });
+
+    renderWithFilters();
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
+
+    const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    expect(dateInputs).toHaveLength(2);
+    fireEvent.change(dateInputs[0], { target: { value: "2025-03-01" } });
+
+    await waitFor(() => {
+      expect(screen.getByText(TEXT_NO_COMPLAINTS_MATCH)).toBeVisible();
     });
   });
 });

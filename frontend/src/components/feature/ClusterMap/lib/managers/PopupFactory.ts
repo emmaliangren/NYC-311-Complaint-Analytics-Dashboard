@@ -1,5 +1,5 @@
-import type { GeoPoint } from "@/types/geopoints";
 import { STATUS_FILLS } from "./constants";
+import type { GeoPoint } from "@/types/geopoints";
 
 export class PopupFactory {
   createHTML(point: GeoPoint): string {

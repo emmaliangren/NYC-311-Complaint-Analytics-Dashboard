@@ -13,6 +13,7 @@ export default [
       "**/node_modules/**",
       "build/**",
       "dist/**",
+      "coverage/**",
       "**/*.config.js",
       "**/*.config.ts",
       "**/.react-router/**/",

@@ -2,6 +2,12 @@
 
 An interactive map-based dashboard for NYC 311 complaint data, highlighting trends, resolution times, and service hotspots. It enables users to explore patterns and identify areas requiring attention.
 
+## Features
+
+- **Interactive map**: clustered markers across NYC with zoom, pan, and popup details
+- **Complaint filtering**: filter by borough, complaint type, status, and date range directly on the map
+- **Auto-refresh**: data reloads on a configurable interval with a "Last updated" indicator
+
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/)

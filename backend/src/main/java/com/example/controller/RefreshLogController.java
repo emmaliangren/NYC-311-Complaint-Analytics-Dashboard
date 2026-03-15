@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/refreshlogs")
 public class RefreshLogController {
-
   private final DataRefreshLogRepository dataRefreshLogRepository;
 
   public RefreshLogController(DataRefreshLogRepository dataRefreshLogRepository) {
@@ -31,7 +30,7 @@ public class RefreshLogController {
   private DataRefreshDto toDto(DataRefreshLog r) {
     return new DataRefreshDto(
         r.getRefreshStartedAt().toString(),
-        r.getRefreshCompletedAt().toString(),
+        r.getRefreshCompletedAt() != null ? r.getRefreshCompletedAt().toString() : null,
         r.getRecordsProcessed(),
         r.getStatus().name());
   }

@@ -24,9 +24,9 @@ from constants import (
     RETRY_CODES,
     NYC_OPEN_DATA,
     RETRY_DELAY,
-    MAX_RECORDS,
     BATCH_DELAY_SECONDS,
     REFRESH_INTERVAL_SECONDS,
+    MAX_RECORDS,
 )
 from logger import RefreshLogger
 from queries import UPSERT_COMPLAINT
@@ -228,50 +228,44 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
 
 
 def run():
-    """Run the ingestor in a continuous loop.
-
-    Each cycle fetches pages of complaint data until we run
-    out of data or hit our record limit, upserting each page
-    into the database. Sleeps for ``REFRESH_INTERVAL_SECONDS``
-    before starting the next cycle.
-
-    Each cycle is tracked in the ``data_refresh_log`` table so
-    the frontend can display data freshness and operators can
-    monitor pipeline health.
-    """
     while True:
-        c = connection()
         page = 1
         total_records = 0
-        with c:
-            logger = RefreshLogger(c)
-            logger.start()
+        logger = None
 
-            try:
+        try:
+            with connection() as c:
+                logger = RefreshLogger(c)
+                logger.start()
+
                 while True:
                     data = fetch(page=page)
+
                     with c.cursor() as cursor:
-                        total_records += upsert(cursor, data)
+                        records_upserted = upsert(cursor, data)
                     c.commit()
 
-                    if len(data) < BATCH_SIZE:
-                        break
+                    total_records += records_upserted
 
-                    if total_records > MAX_RECORDS:
+                    if len(data) < BATCH_SIZE or total_records > MAX_RECORDS:
                         break
 
                     page += 1
-                    print("Ingestion complete, " f"sleeping for {BATCH_DELAY_SECONDS}s")
                     time.sleep(BATCH_DELAY_SECONDS)
 
                 logger.complete(total_records)
-            except Exception as e:
-                error_message = str(e)
-                print("Refresh cycle failed: " f"{error_message}")
-                logger.fail(error_message)
-                raise
+        except Exception as e:
+            error_message = str(e)
+            print(f"Refresh cycle failed: {error_message}")
+            if logger:
+                try:
+                    with connection() as fail_conn:
+                        logger.conn = fail_conn
+                        logger.fail(error_message)
+                except Exception as log_err:
+                    print(f"Failed to log failure: {log_err}")
 
-        print("Ingestion complete, " f"sleeping for {REFRESH_INTERVAL_SECONDS}s")
+        print(f"Sleeping for {REFRESH_INTERVAL_SECONDS}s")
         time.sleep(REFRESH_INTERVAL_SECONDS)
 
 
