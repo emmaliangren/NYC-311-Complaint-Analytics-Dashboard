@@ -1,4 +1,5 @@
-import type L from "leaflet";
+import type { Borough, ComplaintType, Status } from "@/types/api";
+import type { FeatureGroup, LatLng, LeafletMouseEvent } from "leaflet";
 
 export interface MapControllerCallbacks {
   onLoadingChange: (loading: boolean) => void;
@@ -12,12 +13,35 @@ export interface MapControllerCallbacks {
   getPanOnCluster: () => boolean;
 }
 
-export type ClusterMouseEvent = L.LeafletEvent & { layer: L.MarkerCluster };
-
 export type FilterParams = {
-  borough?: string;
-  complaintType?: string;
-  status?: string;
+  borough?: Borough;
+  complaintType?: ComplaintType;
+  status?: Status;
   dateFrom?: string;
   dateTo?: string;
 };
+
+export interface FGLayer {
+  _featureGroup: FeatureGroup;
+}
+
+export interface ClusterLayer {
+  getChildCount(): number;
+  getLatLng(): LatLng;
+  spiderfy(): void;
+}
+
+export interface ClusterMouseEvent extends LeafletMouseEvent {
+  propagatedFrom: ClusterLayer;
+}
+
+export type DebouncedFn<T extends (...args: Parameters<T>) => void> = T & {
+  cancel(): void;
+};
+
+export type IntervalTimer = ReturnType<typeof setInterval>;
+export type TimeoutTimer = ReturnType<typeof setTimeout>;
+
+export type LeafletContainer = HTMLElement & { _leaflet_id?: number };
+
+export type AnyVoidFn = (...args: any[]) => void;

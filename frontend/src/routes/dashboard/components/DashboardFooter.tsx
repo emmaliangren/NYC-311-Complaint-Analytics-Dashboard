@@ -1,5 +1,5 @@
-import type { DataRefresh } from "@/types/logs";
 import { formatDate, formatTime } from "@/lib/util";
+import type { DataRefresh } from "@/types/logs";
 import { Link } from "react-router";
 
 interface DashboardFooterProps {
@@ -7,12 +7,6 @@ interface DashboardFooterProps {
 }
 
 const DashboardFooter = ({ refresh }: DashboardFooterProps) => {
-  const lastRefresh = refresh?.refreshCompletedAt
-    ? `${formatDate(refresh.refreshCompletedAt)} at ${formatTime(refresh.refreshCompletedAt)}`
-    : refresh
-      ? "In progress..."
-      : "N/A";
-
   return (
     <footer className="mt-4 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
       <span>
@@ -22,7 +16,12 @@ const DashboardFooter = ({ refresh }: DashboardFooterProps) => {
         </Link>
       </span>
 
-      <span>Last refresh: {lastRefresh}</span>
+      {refresh?.refreshStartedAt && (
+        <span>
+          Last refresh: {formatDate(refresh.refreshStartedAt)} at{" "}
+          {formatTime(refresh.refreshStartedAt)}
+        </span>
+      )}
     </footer>
   );
 };

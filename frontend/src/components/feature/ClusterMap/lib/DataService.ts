@@ -18,9 +18,9 @@ export class DataService {
     return this.useMock;
   }
 
-  /** Cancel any in-flight request and start a fresh one. */
+  /** cancel any in-flight request and start a fresh one. */
   async fetchPoints(params?: FilterParams): Promise<GeoPoint[] | null> {
-    // Cancel the previous fetch if still running
+    // cancel the previous fetch if still running
     this.abortController?.abort();
     this.abortController = new AbortController();
     const { signal } = this.abortController;
@@ -30,7 +30,7 @@ export class DataService {
         ? await fetchGeoPointsMock()
         : await fetchGeoPoints(params, signal);
 
-      // If this request was superseded, signal the caller to ignore the result
+      // if this request was superseded, signal the caller to ignore the result
       if (signal.aborted) return null;
       return points;
     } catch (err) {

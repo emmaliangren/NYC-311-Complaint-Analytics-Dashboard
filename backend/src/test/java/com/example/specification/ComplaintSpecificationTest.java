@@ -1,6 +1,6 @@
 package com.example.specification;
 
-import static com.example.specification.ComplaintSpecifications.*;
+import static com.example.specification.ComplaintSpecification.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.entity.Complaint;
@@ -17,7 +17,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 @DataJpaTest
 @AutoConfigureTestDatabase()
-class ComplaintSpecificationsTest {
+class ComplaintSpecificationTest {
 
   // keys
   private static final String KEY_1 = "1";

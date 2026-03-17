@@ -8,13 +8,13 @@ export const NYC_BOUNDS: L.LatLngBoundsExpression = [
   [41.0, -73.55],
 ];
 
-export const LOAD_START = 0;
-
-export const INITIAL_LOAD_TIMEOUT_MS = 15_000;
+export const TOAST_TIMER = 8000;
+export const TOAST_MESSAGE = "No complaints match.";
 
 export const MAX_ZOOM = 18;
 export const MIN_ZOOM = 10;
 
+export const FIFTEEN_SECONDS = 15_000;
 export const TEN_SECONDS = 10_000;
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 3600;
 export const DEFAULT_REFRESH_INTERVAL_MS = DEFAULT_REFRESH_INTERVAL_SECONDS * 1000;
@@ -65,6 +65,23 @@ export const CLUSTER_OPTIONS: L.MarkerClusterGroupOptions = {
   },
 };
 
+export const TEXT_LOAD_MOCK_DATA = "Load mock data";
+export const TEXT_NO_COMPLAINT_DATA_AVAILABLE = "No complaints match.";
+export const TEXT_COORDINATES = "Coordinates";
+export const THEME_MUTATION_ATTR = "class";
+export const ONE_HOUR_MS = 3_600_000;
+export const TEST_WAITFOR_TIMEOUT_MS = 3_000;
+
+export const STATUSES: Status[] = [
+  "Open",
+  "In Progress",
+  "Assigned",
+  "Started",
+  "Closed",
+  "Pending",
+  "default",
+] as const;
+
 // Testing
 
 export const POINTS: GeoPoint[] = [
@@ -98,20 +115,3 @@ export const POINTS: GeoPoint[] = [
 ];
 
 export const POINT = POINTS[0];
-
-export const TEXT_LOAD_MOCK_DATA = "Load mock data";
-export const TEXT_NO_COMPLAINT_DATA_AVAILABLE = "No complaints match.";
-export const TEXT_COORDINATES = "Coordinates";
-export const THEME_MUTATION_ATTR = "class";
-export const ONE_HOUR_MS = 3_600_000;
-export const TEST_WAITFOR_TIMEOUT_MS = 3_000;
-
-export const STATUSES: Status[] = [
-  "Open",
-  "In Progress",
-  "Assigned",
-  "Started",
-  "Closed",
-  "Pending",
-  "default",
-] as const;

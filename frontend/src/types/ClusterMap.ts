@@ -1,11 +1,13 @@
 import type { Map } from "leaflet";
 import type { ComplaintType, Borough, Status } from "./api";
 import type { GeoPoint } from "./geopoints";
-import type { ReactNode } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { SummaryProps } from "@/components/feature/ClusterMap/components/FilterPanel/types";
 
 export interface ClusterMapProps {
   className?: string;
+  walkthroughOpen: boolean;
+  setWalkthroughOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface FilterOptionsResponse {
@@ -51,14 +53,16 @@ export interface QueryFilterOptions {
   statuses: string[];
 }
 
+export type ActiveTab = "filters" | "active";
+
 export interface FilterPanelProps extends SummaryProps {
   children: ReactNode;
   isExpanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
   spotlight?: boolean;
-  activeTab?: "filters" | "active";
-  onTabChange?: (tab: "filters" | "active") => void;
+  activeTab?: ActiveTab;
+  onTabChange?: (tab: ActiveTab) => void;
 }
 
 export interface TooltipProps {

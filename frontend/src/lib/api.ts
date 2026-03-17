@@ -1,5 +1,5 @@
 import type { GeoPoint } from "@/types/geopoints";
-import type { HealthCheck } from "../types/api";
+import type { Borough, ComplaintType, HealthCheck, Status } from "../types/api";
 import type { DataRefresh } from "@/types/logs";
 import { logError, MOCK_POINTS } from "./util";
 import { MOCK_REFRESH } from "./api.mocks";
@@ -41,9 +41,9 @@ export const fetchFilterOptions = async (): Promise<FilterOptionsResponse> => {
 
 export const fetchGeoPoints = async (
   params?: {
-    borough?: string;
-    complaintType?: string;
-    status?: string;
+    borough?: Borough;
+    complaintType?: ComplaintType;
+    status?: Status;
     dateFrom?: string;
     dateTo?: string;
   },

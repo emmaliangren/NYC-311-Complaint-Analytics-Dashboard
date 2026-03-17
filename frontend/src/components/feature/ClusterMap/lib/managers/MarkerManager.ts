@@ -12,8 +12,8 @@ import type { MarkerManagerCallbacks } from "./types";
  */
 export class MarkerManager {
   private markers = new Map<string, L.Marker>();
-  private buildGeneration = 0;
   private geoPointMap = new WeakMap<L.Marker, GeoPoint>();
+  private buildGeneration = 0;
   private iconFactory: IconFactory;
   private popupFactory: PopupFactory;
   private callbacks: MarkerManagerCallbacks;

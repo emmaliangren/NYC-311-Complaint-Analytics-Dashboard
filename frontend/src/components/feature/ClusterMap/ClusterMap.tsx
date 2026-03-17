@@ -7,34 +7,37 @@ import {
   ZoomPanel,
   EmptyState,
   EdgeFade,
+  LoadingBar,
 } from "./components";
-import { MAX_ZOOM, MIN_ZOOM } from "./lib/constants";
+import { MAX_ZOOM, MIN_ZOOM, TOAST_MESSAGE, TOAST_TIMER } from "./lib/constants";
 import { FilterPanel } from "./components/FilterPanel";
 import { useFilters } from "@/context/FilterProvider";
 import DateRangeFilter from "@/components/feature/ClusterMap/components/DateRangeFilter";
 import { CategoryFilter } from "./components/CategoryFilter";
-import type { ClusterMapProps } from "@/types/ClusterMap";
+import type { ActiveTab, ClusterMapProps } from "@/types/ClusterMap";
 import ToastMessage from "@/components/ui/Popup";
 import SpotlightTip from "./components/Spotlight";
 
-const ClusterMap = ({ className }: ClusterMapProps) => {
-  const filterPanelRef = useRef<HTMLDivElement>(null);
-  const isInitialLoadRef = useRef(true);
-  const isReloadingRef = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterMapProps) => {
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<MapController | null>(null);
+
+  const isReloadingRef = useRef(false);
+  const hasEverHadDataRef = useRef(false);
+
+  const isInitialLoadRef = useRef(true);
   const colourByStatusRef = useRef(true);
   const panOnClusterRef = useRef(true);
   const panOnMarkerRef = useRef(true);
-  const hasEverHadDataRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [softLoading, setSoftLoading] = useState(false);
+
   const [isEmpty, setIsEmpty] = useState(false);
   const [showEmpty, setShowEmpty] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
-  const [filterActiveTab, setFilterActiveTab] = useState<"filters" | "active">("filters");
+  const [filterActiveTab, setFilterActiveTab] = useState<ActiveTab>("filters");
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [isAtDefault, setIsAtDefault] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -45,8 +48,10 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
   const filters = useFilters();
 
   useEffect(() => {
-    setShowNoResults(isEmpty && filters.activeEntries.length > 0);
-  }, [isEmpty, filters.activeEntries.length]);
+    if (filteredCount === 0 && filters.activeEntries.length > 0) {
+      setShowNoResults(true);
+    }
+  }, [filteredCount, filters.activeEntries.length]);
 
   useEffect(() => {
     if (!isEmpty || softLoading || loading) {
@@ -110,6 +115,7 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
   }, [filters.borough, filters.complaintType, filters.status, filters.dateFrom, filters.dateTo]);
 
   const handleZoomIn = useCallback(() => controllerRef.current?.zoomIn(), []);
+
   const handleZoomOut = useCallback(() => controllerRef.current?.zoomOut(), []);
 
   const handleReset = useCallback(() => {
@@ -133,10 +139,10 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
       )}
       <ToastMessage
         variant="info"
-        message="No complaints match."
-        visible={showNoResults}
+        visible={filteredCount === 0 && showNoResults}
         onClose={() => setShowNoResults(false)}
-        duration={8000}
+        message={TOAST_MESSAGE}
+        duration={TOAST_TIMER}
       />
       <ZoomPanel
         zoomIn={handleZoomIn}
@@ -213,21 +219,9 @@ const ClusterMap = ({ className }: ClusterMapProps) => {
           },
         ]}
         onDismiss={() => setFilterOpen(false)}
-      />{" "}
+      />
     </MapWrapper>
   );
 };
 
 export default ClusterMap;
-
-const LoadingBar = ({ visible }: { visible: boolean }) => {
-  if (!visible) return null;
-  return (
-    <div className="absolute top-0 left-0 right-0 z-[1000] h-[2px] bg-blue-500/30 overflow-hidden">
-      <div
-        className="h-full bg-blue-500 animate-[slide_1s_ease-in-out_infinite]"
-        style={{ width: "40%" }}
-      />
-    </div>
-  );
-};

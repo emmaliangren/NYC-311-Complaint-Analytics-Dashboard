@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import type { ToastProps, ToastVariant } from "@/types/Toast";
 import { useEffect, useState, type ReactNode } from "react";
 import Button from "@/components/ui/Button";
+import { MAX_TOAST_PROGRESS, VARIANT_BAR_STYLES } from "./constants";
 
 const variantStyles: Record<ToastVariant, string> = {
   info: "border-blue-200 bg-blue-50 text-blue-800",
@@ -11,14 +12,6 @@ const variantStyles: Record<ToastVariant, string> = {
   warning: "border-grey-200 bg-grey-100 text-grey-700",
   error: "border-red-200 bg-red-50 text-red-800",
 };
-
-// const variantBarStyles: Record<ToastVariant, string> = {
-//   info: "bg-blue-300",
-//   success: "bg-green-300",
-//   warning: "bg-stone-400",
-//   error: "bg-red-300",
-//   emerald: "bg-emerald-300",
-// };
 
 const variantIcons: Record<ToastVariant, ReactNode> = {
   info: <FiInfo />,
@@ -35,15 +28,15 @@ export default function ToastMessage({
   onClose,
   duration,
 }: ToastProps) {
-  const [_progress, setProgress] = useState(100);
+  const [progress, setProgress] = useState(MAX_TOAST_PROGRESS);
 
   useEffect(() => {
     if (!visible || !duration) return;
-    setProgress(100);
+    setProgress(MAX_TOAST_PROGRESS);
 
     const interval = setInterval(() => {
-      setProgress((p) => Math.max(0, p - 100 / (duration / 100)));
-    }, 100);
+      setProgress((p) => Math.max(0, p - MAX_TOAST_PROGRESS / (duration / MAX_TOAST_PROGRESS)));
+    }, MAX_TOAST_PROGRESS);
 
     const timer = setTimeout(onClose, duration);
     return () => {
@@ -68,6 +61,26 @@ export default function ToastMessage({
           <FiX />
         </Button>
       </div>
+      {duration && <ToastProgressBar variant={variant} progress={progress} />}
     </div>
   );
 }
+
+interface ToastProgressBarProps {
+  variant: ToastVariant;
+  progress: number;
+}
+
+const ToastProgressBar = ({ variant, progress }: ToastProgressBarProps) => {
+  return (
+    <div className="h-1 w-full bg-black/10">
+      <div
+        className={clsx("h-full transition-all ease-linear", VARIANT_BAR_STYLES[variant])}
+        style={{
+          width: `${(progress / MAX_TOAST_PROGRESS) * 100}%`,
+          transitionDuration: `${MAX_TOAST_PROGRESS}ms`,
+        }}
+      />
+    </div>
+  );
+};

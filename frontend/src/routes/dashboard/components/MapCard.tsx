@@ -1,9 +1,14 @@
 import { FilterProvider } from "@/context/FilterProvider";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type Dispatch, type SetStateAction } from "react";
 
 const ClusterMap = lazy(() => import("@/components/feature/ClusterMap"));
 
-const MapCard = () => (
+interface MapCardProps {
+  walkthroughOpen: boolean;
+  setWalkthroughOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+const MapCard = ({ walkthroughOpen, setWalkthroughOpen }: MapCardProps) => (
   <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5 dark:shadow-black/30 dark:backdrop-blur-sm">
     <Suspense
       fallback={
@@ -11,7 +16,11 @@ const MapCard = () => (
       }
     >
       <FilterProvider>
-        <ClusterMap className="h-[calc(100vh-220px)] min-h-[500px]" />
+        <ClusterMap
+          className="h-[calc(100vh-220px)] min-h-[500px]"
+          walkthroughOpen={walkthroughOpen}
+          setWalkthroughOpen={setWalkthroughOpen}
+        />
       </FilterProvider>
     </Suspense>
   </div>

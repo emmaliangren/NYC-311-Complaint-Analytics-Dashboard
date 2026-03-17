@@ -7,5 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DataRefreshLogRepository extends JpaRepository<DataRefreshLog, Integer> {
   Optional<DataRefreshLog> findFirstByStatusOrderByRefreshCompletedAtDesc(RefreshStatus status);
+
   Optional<DataRefreshLog> findFirstByOrderByRefreshStartedAtDesc();
 }
