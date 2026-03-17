@@ -14,8 +14,8 @@ const FilterDropdown = <T extends FilterValue>({
   error,
   defaultLabel = "All",
 }: FilterDropdownProps<T>) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);

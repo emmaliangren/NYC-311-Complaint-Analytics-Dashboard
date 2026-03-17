@@ -4,7 +4,7 @@ import com.example.dto.ComplaintGeoPointDto;
 import com.example.dto.FilterOptionsDto;
 import com.example.entity.Complaint;
 import com.example.repository.ComplaintRepository;
-import com.example.repository.ComplaintSpecification;
+import com.example.specification.ComplaintSpecification;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -26,28 +26,28 @@ public class GeoController {
 
   @GetMapping("/geopoints")
   public List<ComplaintGeoPointDto> getGeoPoints(
-    @RequestParam Optional<String> complaintType,
-    @RequestParam Optional<String> borough,
-    @RequestParam Optional<String> status,
-    @RequestParam Optional<LocalDate> dateFrom,
-    @RequestParam Optional<LocalDate> dateTo) {
+      @RequestParam Optional<String> complaintType,
+      @RequestParam Optional<String> borough,
+      @RequestParam Optional<String> status,
+      @RequestParam Optional<LocalDate> dateFrom,
+      @RequestParam Optional<LocalDate> dateTo) {
 
     Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasCoordinates());
 
     if (complaintType.isPresent()) {
-        spec = spec.and(ComplaintSpecification.hasComplaintType(complaintType.get()));
+      spec = spec.and(ComplaintSpecification.hasComplaintType(complaintType.get()));
     }
     if (borough.isPresent()) {
-        spec = spec.and(ComplaintSpecification.hasBorough(borough.get()));
+      spec = spec.and(ComplaintSpecification.hasBorough(borough.get()));
     }
     if (status.isPresent()) {
-        spec = spec.and(ComplaintSpecification.hasStatus(status.get()));
+      spec = spec.and(ComplaintSpecification.hasStatus(status.get()));
     }
     if (dateFrom.isPresent()) {
-        spec = spec.and(ComplaintSpecification.createdAfter(dateFrom.get()));
+      spec = spec.and(ComplaintSpecification.createdAfter(dateFrom.get()));
     }
     if (dateTo.isPresent()) {
-        spec = spec.and(ComplaintSpecification.createdBefore(dateTo.get()));
+      spec = spec.and(ComplaintSpecification.createdBefore(dateTo.get()));
     }
 
     return complaintRepository.findAll(spec).stream().map(this::toDto).toList();
@@ -59,17 +59,18 @@ public class GeoController {
         complaintRepository.findDistinctComplaintTypes(),
         complaintRepository.findDistinctBoroughs(),
         complaintRepository.findDistinctStatuses());
-
   }
 
   private ComplaintGeoPointDto toDto(Complaint c) {
+    String createdDate =
+        c.getCreatedDate() != null ? c.getCreatedDate().toLocalDate().toString() : null;
     return new ComplaintGeoPointDto(
         c.getUniqueKey(),
         c.getLatitude(),
         c.getLongitude(),
         c.getComplaintType(),
         c.getBorough(),
-        c.getCreatedDate().toLocalDate().toString(),
+        createdDate,
         c.getStatus());
   }
 }

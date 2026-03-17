@@ -31,10 +31,12 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
   const updateRect = useCallback(() => {
     if (targetRef.current) setRect(targetRef.current.getBoundingClientRect());
   }, [targetRef]);
+
   const close = useCallback(() => {
     setOpen(false);
     onOpenChange(false);
   }, [onOpenChange]);
+
   const updateHighlightRect = useCallback((selector?: string) => {
     if (!selector) {
       setHighlightRect(null);
@@ -82,18 +84,21 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     onDismiss?.();
     close();
   };
+
   const openWalkthrough = () => {
     setStep(0);
     steps[0]?.onEnter?.();
     setOpen(true);
     onOpenChange(true);
   };
+
   const goToStep = (next: number) => {
     steps[next]?.onEnter?.();
     setStep(next);
   };
 
   const isLast = step === steps.length - 1;
+
   const currentStep = steps[step];
 
   if (!visible || !rect) return null;

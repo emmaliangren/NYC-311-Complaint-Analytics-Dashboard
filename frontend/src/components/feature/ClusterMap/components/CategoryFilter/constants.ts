@@ -4,10 +4,12 @@ import type { FilterOptionsResponse } from "@/types/ClusterMap";
 
 export const DEFAULT_LABEL = "All complaint types";
 export const LOADING_DELAY_MS = 5000;
+
 export const TEST_ID = "test-filter";
 export const TEST_LABEL = "Test Filter";
 export const TEST_DEFAULT = "All items";
 export const TEST_OPTIONS: ComplaintType[] = ["Noise - Residential", "Heat/Hot Water", "Graffiti"];
+
 export const COMPLAINT_TYPES = F.filterOptions.ok.complaintTypes;
 export const BOROUGHS = F.filterOptions.ok.boroughs;
 export const STATUSES = F.filterOptions.ok.statuses;

@@ -1,3 +1,5 @@
+import type { ToastVariant } from "@/types/Toast";
+
 export const TEST_MESSAGE = "Test message";
 
 export const OPACITY_STYLE = {
@@ -14,4 +16,14 @@ export const VARIANT_STYLES = {
   ERROR: "text-red-800",
 };
 
+export const VARIANT_BAR_STYLES: Record<ToastVariant, string> = {
+  info: "bg-blue-300",
+  success: "bg-green-300",
+  warning: "bg-stone-400",
+  error: "bg-red-300",
+  emerald: "bg-emerald-300",
+};
+
 export const TIMER_DURATION = 3000;
+
+export const MAX_TOAST_PROGRESS = 100;

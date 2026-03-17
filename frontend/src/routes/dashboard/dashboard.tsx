@@ -16,6 +16,7 @@ import { fetchLastRefresh } from "@/lib/api";
 const Dashboard = () => {
   const { refresh: initialRefresh } = useLoaderData<typeof clientLoader>();
   const [refresh, setRefresh] = useState(initialRefresh);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -31,8 +32,8 @@ const Dashboard = () => {
     <PageBackground>
       <CornerGlow />
       <PageContainer>
-        <DashboardHeader />
-        <MapCard />
+        <DashboardHeader walkthroughOpen={walkthroughOpen} />
+        <MapCard walkthroughOpen={walkthroughOpen} setWalkthroughOpen={setWalkthroughOpen} />
         <DashboardFooter refresh={refresh} />
       </PageContainer>
     </PageBackground>

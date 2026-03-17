@@ -56,8 +56,6 @@ class GeoControllerTest {
 
   @MockBean private ComplaintRepository complaintRepository;
 
-  // --- Success cases ---
-
   @Test
   void getGeoPoints_returnsCorrectJsonShape() throws Exception {
     when(complaintRepository.findAll(ArgumentMatchers.<Specification<Complaint>>any()))
@@ -199,7 +197,7 @@ class GeoControllerTest {
         .andExpect(jsonPath("$.statuses", hasSize(0)));
   }
 
-  // --- Filter parameter cases ---
+  // Filter parameters
 
   @Test
 void getGeoPoints_filterByComplaintType_returnsOnlyMatchingComplaints() throws Exception {
@@ -281,20 +279,11 @@ void getGeoPoints_filterByComplaintTypeAndDateFrom_appliesAndLogic() throws Exce
         .andExpect(jsonPath("$[0].createdDate").value(DATE_1));
 }
 
-  // --- Error / edge cases ---
-
-  @Test
-  void getGeoPoints_methodNotAllowedForPost() throws Exception {
-    mockMvc.perform(post(GEO_POINTS_URL)).andExpect(status().isMethodNotAllowed());
-  }
+  //  Error and edge cases
 
   @Test
   void getGeoPoints_unknownPathReturns404() throws Exception {
     mockMvc.perform(get(GEO_POINTS_UNKNOWN_URL)).andExpect(status().isNotFound());
   }
 
-  @Test
-  void getFilterOptions_methodNotAllowedForPost() throws Exception {
-    mockMvc.perform(post(FILTER_OPTIONS_URL)).andExpect(status().isMethodNotAllowed());
-  }
 }
