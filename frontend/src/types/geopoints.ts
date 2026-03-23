@@ -1,11 +1,13 @@
-import type { Status } from "./api";
+import type { Agency } from "./agency";
+import type { Borough, ComplaintType, Status } from "./api";
 
 export interface GeoPoint {
   uniqueKey: string;
   latitude: number;
   longitude: number;
-  complaintType: string;
-  borough: string;
   createdDate: string;
+  complaintType: ComplaintType;
+  borough: Borough;
   status: Status;
+  agency: Agency;
 }

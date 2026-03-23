@@ -22,18 +22,18 @@ const MultiShadow = ({ size = "md" }: { size?: LoaderSize }) => (
  * loader
  * @param label       - optional text displayed below the spinner
  * @param size        - sm | md | lg
- * @param showSpinner - set false to hide the spinner
- * @param showLabel   - set false to hide the label
+ * @param isShowSpinner - set false to hide the spinner
+ * @param isShowLabel   - set false to hide the label
  */
 const Loader = ({
   label,
   size = "md",
-  showSpinner = true,
-  showLabel = true,
+  isShowSpinner = true,
+  isShowLabel = true,
   className,
 }: LoaderProps) => {
-  const displayLabel = showLabel
-    ? (label ?? (!showSpinner ? DEFAULT_LABEL : undefined))
+  const displayLabel = isShowLabel
+    ? (label ?? (!isShowSpinner ? DEFAULT_LABEL : undefined))
     : undefined;
 
   return (
@@ -42,7 +42,7 @@ const Loader = ({
       aria-label="Loading"
       className={cn("flex flex-col items-center gap-3", className)}
     >
-      {showSpinner && <MultiShadow size={size} />}
+      {isShowSpinner && <MultiShadow size={size} />}
       {displayLabel && (
         <p className="text-xs text-gray-400 dark:text-gray-400 font-black">
           {displayLabel}

@@ -2,12 +2,12 @@ import Loader from "@/components/ui/Loader";
 import { LOADING_LABEL } from "./constants";
 import type { LoadingOverlayProps } from "./types";
 
-const LoadingOverlay = ({ visible, label = LOADING_LABEL }: LoadingOverlayProps) => (
+const LoadingOverlay = ({ isVisible, label = LOADING_LABEL }: LoadingOverlayProps) => (
   <div
     className="absolute inset-0 z-[1000] flex items-center justify-center rounded bg-white/80 dark:bg-[#0a1628]/80 transition-opacity duration-200"
-    style={{ opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none" }}
+    style={{ opacity: isVisible ? 1 : 0, pointerEvents: isVisible ? "auto" : "none" }}
   >
-    {visible && <Loader showLabel={false} label={label} />}
+    {isVisible && <Loader isShowLabel={false} label={label} />}
   </div>
 );
 

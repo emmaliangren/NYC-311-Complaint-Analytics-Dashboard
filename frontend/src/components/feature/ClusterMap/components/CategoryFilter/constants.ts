@@ -1,41 +1,17 @@
-import type { ComplaintType } from "@/types/api";
-import { FIXTURES as F } from "@/mocks/constants";
-import type { FilterOptionsResponse } from "@/types/ClusterMap";
+import { AGENCIES } from "@/lib/agency";
+import { COMPLAINT_TYPES, BOROUGHS, STATUSES } from "@/lib/api.constants";
 
 export const DEFAULT_LABEL = "All complaint types";
+
 export const LOADING_DELAY_MS = 5000;
-
-export const TEST_ID = "test-filter";
-export const TEST_LABEL = "Test Filter";
-export const TEST_DEFAULT = "All items";
-export const TEST_OPTIONS: ComplaintType[] = ["Noise - Residential", "Heat/Hot Water", "Graffiti"];
-
-export const COMPLAINT_TYPES = F.filterOptions.ok.complaintTypes;
-export const BOROUGHS = F.filterOptions.ok.boroughs;
-export const STATUSES = F.filterOptions.ok.statuses;
 
 export const ERROR_MESSAGE = "";
 
-export const FALLBACK_OPTIONS: FilterOptionsResponse = {
-  complaintTypes: [
-    "Noise - Residential",
-    "Noise - Commercial",
-    "Noise - Street/Sidewalk",
-    "Illegal Parking",
-    "Blocked Driveway",
-    "Heat/Hot Water",
-    "Street Condition",
-    "Water System",
-    "Rodent",
-    "Unsanitary Condition",
-    "Traffic Signal Condition",
-    "Homeless Encampment",
-    "Graffiti",
-    "Air Quality",
-    "Sewer",
-  ],
-  boroughs: ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"],
-  statuses: ["Open", "Closed", "In Progress", "Assigned", "Started", "Pending"],
+export const FALLBACK_OPTIONS = {
+  complaintTypes: COMPLAINT_TYPES,
+  boroughs: BOROUGHS,
+  statuses: STATUSES,
+  agency: AGENCIES,
 };
 
 export const FILTERS = [

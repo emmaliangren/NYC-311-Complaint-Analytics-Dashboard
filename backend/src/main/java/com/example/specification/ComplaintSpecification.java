@@ -1,6 +1,7 @@
 package com.example.specification;
 
 import com.example.entity.Complaint;
+import jakarta.persistence.criteria.JoinType;
 import java.time.LocalDate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -31,5 +32,10 @@ public class ComplaintSpecification {
   public static Specification<Complaint> createdBefore(LocalDate date) {
     return (root, query, cb) ->
         cb.lessThan(root.get("createdDate"), date.plusDays(1).atStartOfDay());
+  }
+
+  public static Specification<Complaint> hasAgencyName(String agencyName) {
+    return (root, query, cb) ->
+        cb.equal(root.join("agency", JoinType.INNER).get("name"), agencyName);
   }
 }

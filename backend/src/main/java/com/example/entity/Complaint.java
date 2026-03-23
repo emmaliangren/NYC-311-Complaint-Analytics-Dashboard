@@ -2,7 +2,10 @@ package com.example.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
@@ -32,6 +35,10 @@ public class Complaint {
   @Column private Double latitude;
 
   @Column private Double longitude;
+
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "agency_id")
+  private Agency agency;
 
   public Complaint() {
     //
@@ -67,5 +74,13 @@ public class Complaint {
 
   public Double getLongitude() {
     return longitude;
+  }
+
+  public Agency getAgency() {
+    return agency;
+  }
+
+  public void setAgency(Agency agency) {
+    this.agency = agency;
   }
 }

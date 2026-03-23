@@ -26,13 +26,13 @@ export default function Landing() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-gray-600">
-              Explore an interactive map of 311 service requests. Spot trends in complaint types,
-              track resolution times, and see which areas need the most attention.
+              Explore an interactive dashboard of 311 service requests. Spot trends in complaint
+              types, track resolution times, and see which areas need the most attention.
             </p>
 
             <div className="mt-10 flex justify-center">
               <Button size="lg" onClick={() => navigate("/dashboard")}>
-                Explore the Map
+                Explore the Dashboard
               </Button>
             </div>
           </div>

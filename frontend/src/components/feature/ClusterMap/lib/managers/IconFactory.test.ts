@@ -1,36 +1,25 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import L from "leaflet";
 import { IconFactory } from "./IconFactory";
-import { STATUSES } from "../constants";
-
-const CLUSTER_ICON_CLASS = "cluster-icon-circle";
-const UNKNOWN_STATUS = "default";
-
-const COUNTS_INITIAL = [100, 50, 10];
-const COUNT_POST_RESET = 999;
-
-const COUNTS_FEWER_THAN_THREE = [10, 5];
-const COUNT_TOP_OF_TWO = COUNTS_FEWER_THAN_THREE[0];
-
-const COUNTS_EXACTLY_THREE = [30, 20, 10];
-const COUNT_MIDDLE_OF_THREE = COUNTS_EXACTLY_THREE[1];
-
-const COUNTS_FIVE = [100, 80, 60, 40, 20];
-const COUNT_FOURTH_OF_FIVE = COUNTS_FIVE[3];
-
-const COUNT_SMALL = 5;
-const COUNT_K_FORMAT = 1500;
-const EXPECTED_K_LABEL = "1.5k";
-
-const STATUS_A = STATUSES[0]; // Open
-const STATUS_B = STATUSES[4]; // Closed
-
-// helper
+import {
+  COUNTS_INITIAL,
+  COUNT_POST_RESET,
+  COUNT_TOP_OF_TWO,
+  CLUSTER_ICON_CLASS,
+  COUNT_MIDDLE_OF_THREE,
+  COUNT_FOURTH_OF_FIVE,
+  COUNT_SMALL,
+  COUNT_K_FORMAT,
+  EXPECTED_K_LABEL,
+  STATUS_UNKNOWN,
+  COUNTS_EXACTLY_THREE,
+  COUNTS_FEWER_THAN_THREE,
+  COUNTS_FIVE,
+} from "./constants";
+import { STATUS_OPEN, STATUS_CLOSED } from "../../constants";
 
 const mockCluster = (count: number): L.MarkerCluster =>
   ({ getChildCount: () => count }) as unknown as L.MarkerCluster;
-
-// tests
 
 let factory: IconFactory;
 
@@ -90,31 +79,31 @@ describe("IconFactory.createClusterIcon", () => {
 
 describe("IconFactory.getMarkerIcons", () => {
   it("returns different icons for normal and hovered states", () => {
-    const { normal, hovered } = factory.getMarkerIcons(STATUS_A, true);
+    const { normal, hovered } = factory.getMarkerIcons(STATUS_OPEN, true);
     expect(normal).not.toBe(hovered);
   });
 
   it("returns same icon for all statuses when colourByStatus is false", () => {
-    const a = factory.getMarkerIcons(STATUS_A, false);
-    const b = factory.getMarkerIcons(STATUS_B, false);
+    const a = factory.getMarkerIcons(STATUS_OPEN, false);
+    const b = factory.getMarkerIcons(STATUS_CLOSED, false);
     expect(a.normal).toBe(b.normal);
   });
 
   it("returns different icons per status when colourByStatus is true", () => {
-    const a = factory.getMarkerIcons(STATUS_A, true);
-    const b = factory.getMarkerIcons(STATUS_B, true);
+    const a = factory.getMarkerIcons(STATUS_OPEN, true);
+    const b = factory.getMarkerIcons(STATUS_CLOSED, true);
     expect(a.normal).not.toBe(b.normal);
   });
 
   it("falls back to default fill for unknown status", () => {
-    const { normal } = factory.getMarkerIcons(UNKNOWN_STATUS, true);
+    const { normal } = factory.getMarkerIcons(STATUS_UNKNOWN, true);
     expect(normal).toBeDefined();
   });
 
   it("clearAll invalidates marker cache", () => {
-    const a = factory.getMarkerIcons(STATUS_A, true);
+    const a = factory.getMarkerIcons(STATUS_OPEN, true);
     factory.clearAll();
-    const b = factory.getMarkerIcons(STATUS_A, true);
+    const b = factory.getMarkerIcons(STATUS_OPEN, true);
     expect(a.normal).not.toBe(b.normal);
   });
 });

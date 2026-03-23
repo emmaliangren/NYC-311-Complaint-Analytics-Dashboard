@@ -41,7 +41,7 @@ import type {
   MapControllerCallbacks,
   TimeoutTimer,
 } from "./types";
-import type { GeoPoint } from "@/types/geopoints";
+import type { GeoPoint } from "@/types";
 
 export class MapController {
   private iconFactory: IconFactory;

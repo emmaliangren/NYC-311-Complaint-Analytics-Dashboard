@@ -1,4 +1,10 @@
-import { PANE_OPACITY_HIDDEN, PANE_OPACITY_VISIBLE, PANE_TRANSITION_EASE } from "./constants";
+import type { Status } from "@/types";
+import {
+  PANE_OPACITY_HIDDEN,
+  PANE_OPACITY_VISIBLE,
+  PANE_TRANSITION_EASE,
+  STATUS_FILLS,
+} from "./constants";
 
 export const hidePaneImmediately = (
   pane: HTMLElement | null,
@@ -32,3 +38,7 @@ export const chunkAnimationFrame = <T>(
     };
     requestAnimationFrame(tick);
   });
+
+export const STATUS_COLOUR_CASES = Object.entries(STATUS_FILLS)
+  .filter(([key]) => key !== "default")
+  .map(([status, fill]) => [status as Status, fill.colour] as const);

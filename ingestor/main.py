@@ -27,9 +27,10 @@ from constants import (
     BATCH_DELAY_SECONDS,
     REFRESH_INTERVAL_SECONDS,
     MAX_RECORDS,
+    TABLES,
 )
 from logger import RefreshLogger
-from queries import UPSERT_COMPLAINT
+from queries import UPSERT_COMPLAINT, UPSERT_AGENCY
 
 
 def fetch(page: int = 1, page_size: int = BATCH_SIZE) -> list[dict]:
@@ -124,6 +125,7 @@ class Complaint:
     status: str
     latitude: Optional[float]
     longitude: Optional[float]
+    agency: Optional[str]
 
 
 def parse_datetime(val: str | None) -> Optional[datetime]:
@@ -187,6 +189,7 @@ def parse_record(record: dict) -> Optional[Complaint]:
         status=record["status"],
         latitude=float(record["latitude"]),
         longitude=float(record["longitude"]),
+        agency=record.get("agency"),
     )
 
 
@@ -201,20 +204,24 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
         The number of valid records that were upserted.
     """
     records = [parse_record(x) for x in data]
-    sql_data = [
-        (
-            r.unique_key,
-            r.created_date,
-            r.closed_date,
-            r.complaint_type,
-            r.borough,
-            r.status,
-            r.latitude,
-            r.longitude,
+    sql_data = []
+    for r in records:
+        if r is None:
+            continue
+        agency_id = upsert_agency(cursor, r.agency)
+        sql_data.append(
+            (
+                r.unique_key,
+                r.created_date,
+                r.closed_date,
+                r.complaint_type,
+                r.borough,
+                r.status,
+                r.latitude,
+                r.longitude,
+                agency_id,
+            )
         )
-        for r in records
-        if r is not None
-    ]
 
     if not sql_data:
         print("No valid records to upsert")
@@ -225,6 +232,27 @@ def upsert(cursor: pymysql.cursors.Cursor, data: list[dict]) -> int:
         f"Upserted {len(sql_data)} records ({len(data) - len(sql_data)} filtered out)"
     )
     return len(sql_data)
+
+
+def upsert_agency(cursor: pymysql.cursors.Cursor, agency_name: str) -> Optional[int]:
+    """Upsert an agency by name and return its id.
+
+    Args:
+        cursor: An open pymysql cursor.
+        agency_name: The agency name to upsert.
+
+    Returns:
+        The agency id, or None if agency_name is None.
+    """
+    if not agency_name:
+        return None
+
+    cursor.execute(UPSERT_AGENCY, (agency_name,))
+    cursor.execute(
+        f"SELECT id FROM {TABLES['agencies']} WHERE name = %s", (agency_name,)
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
 
 
 def run():

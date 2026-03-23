@@ -29,6 +29,7 @@ public class GeoController {
       @RequestParam Optional<String> complaintType,
       @RequestParam Optional<String> borough,
       @RequestParam Optional<String> status,
+      @RequestParam Optional<String> agency,
       @RequestParam Optional<LocalDate> dateFrom,
       @RequestParam Optional<LocalDate> dateTo) {
 
@@ -42,6 +43,9 @@ public class GeoController {
     }
     if (status.isPresent()) {
       spec = spec.and(ComplaintSpecification.hasStatus(status.get()));
+    }
+    if (agency.isPresent()) {
+      spec = spec.and(ComplaintSpecification.hasAgencyName(agency.get()));
     }
     if (dateFrom.isPresent()) {
       spec = spec.and(ComplaintSpecification.createdAfter(dateFrom.get()));
@@ -58,12 +62,14 @@ public class GeoController {
     return new FilterOptionsDto(
         complaintRepository.findDistinctComplaintTypes(),
         complaintRepository.findDistinctBoroughs(),
-        complaintRepository.findDistinctStatuses());
+        complaintRepository.findDistinctStatuses(),
+        complaintRepository.findDistinctAgencyNames());
   }
 
   private ComplaintGeoPointDto toDto(Complaint c) {
     String createdDate =
         c.getCreatedDate() != null ? c.getCreatedDate().toLocalDate().toString() : null;
+    String agencyName = c.getAgency() != null ? c.getAgency().getName() : null;
     return new ComplaintGeoPointDto(
         c.getUniqueKey(),
         c.getLatitude(),
@@ -71,6 +77,7 @@ public class GeoController {
         c.getComplaintType(),
         c.getBorough(),
         createdDate,
-        c.getStatus());
+        c.getStatus(),
+        agencyName);
   }
 }

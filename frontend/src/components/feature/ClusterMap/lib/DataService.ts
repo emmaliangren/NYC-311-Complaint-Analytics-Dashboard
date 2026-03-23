@@ -20,7 +20,6 @@ export class DataService {
 
   /** cancel any in-flight request and start a fresh one. */
   async fetchPoints(params?: FilterParams): Promise<GeoPoint[] | null> {
-    // cancel the previous fetch if still running
     this.abortController?.abort();
     this.abortController = new AbortController();
     const { signal } = this.abortController;

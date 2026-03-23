@@ -8,6 +8,7 @@ export type ButtonVariant =
   | "icon"
   | "dropdown"
   | "none";
+
 export type ButtonSize = "sm" | "md" | "lg";
 
 type BaseButtonProps = ComponentProps<"button"> & {

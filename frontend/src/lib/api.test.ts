@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { ENDPOINTS as E, ENDPOINTS, FIXTURES as F, FIXTURES } from "../mocks/constants";
-import { mock } from "../mocks/mock";
+import { server, mock, ENDPOINTS, FIXTURES as F } from "@/mocks";
 import {
   checkHealth,
   fetchGeoPoints,
@@ -8,8 +7,24 @@ import {
   fetchGeoPointsMock,
   fetchLastRefreshMock,
 } from "./api";
-import { expectResult } from "../tests/helpers";
-import { server } from "@/mocks/server";
+import { expectResult } from "@/tests/helpers";
+
+const DATE_FROM = "2025-01-01";
+const DATE_TO = "2025-12-31";
+const DATE_FROM_NEXT_YEAR = "2026-01-01";
+const DATE_TO_NEXT_YEAR = "2026-03-01";
+
+const BOROUGH_MANHATTAN = "MANHATTAN";
+const BOROUGH_BROOKLYN = "BROOKLYN";
+const BOROUGH_BRONX = "BRONX";
+
+const COMPLAINT_NOISE = "Noise - Residential";
+const COMPLAINT_RODENT = "Rodent";
+
+const STATUS_OPEN = "Open";
+const STATUS_CLOSED = "Closed";
+
+const HTTP_NOT_FOUND = 404;
 
 let lastUrl = "";
 
@@ -23,115 +38,113 @@ beforeAll(() => {
 
 describe("checkHealth", () => {
   it("returns parsed health response", async () => {
-    mock.success(E.health, F.health.ok);
+    mock.health.loaded();
     await expectResult(checkHealth, F.health.ok);
   });
 
   it("returns error status on failure", async () => {
-    mock.failure(E.health);
-    await expectResult(checkHealth, F.health.error);
+    mock.health.failure();
+    await expectResult(checkHealth, F.health.empty);
   });
 
   it("returns error status on network failure", async () => {
-    mock.offline(E.health);
-    await expectResult(checkHealth, F.health.error);
+    mock.health.offline();
+    await expectResult(checkHealth, F.health.empty);
   });
 });
 
 describe("fetchGeoPoints", () => {
   it("returns parsed geo points on success", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
+    mock.geoPoints.loaded();
     await expectResult(fetchGeoPoints, F.geoPoints.ok);
   });
 
   it("returns empty array on server error", async () => {
-    mock.failure(E.geoPoints);
+    mock.geoPoints.failure();
     await expectResult(fetchGeoPoints, F.geoPoints.empty);
   });
 
   it("returns empty array on network failure", async () => {
-    mock.offline(E.geoPoints);
+    mock.geoPoints.offline();
     await expectResult(fetchGeoPoints, F.geoPoints.empty);
   });
 
   it("passes borough query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPoints({ borough: "MANHATTAN" });
+    mock.geoPoints.loaded();
+    const result = await fetchGeoPoints({ borough: BOROUGH_MANHATTAN });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("passes complaintType query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPoints({ complaintType: "Noise" });
+    mock.geoPoints.loaded();
+    const result = await fetchGeoPoints({ complaintType: COMPLAINT_NOISE });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("passes status query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPoints({ status: "Open" });
+    mock.geoPoints.loaded();
+    const result = await fetchGeoPoints({ status: STATUS_OPEN });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("passes dateFrom query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPoints({ dateFrom: "2025-01-01" });
+    mock.geoPoints.loaded();
+    const result = await fetchGeoPoints({ dateFrom: DATE_FROM });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("passes dateTo query param", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
-    const result = await fetchGeoPoints({ dateTo: "2025-12-31" });
+    mock.geoPoints.loaded();
+    const result = await fetchGeoPoints({ dateTo: DATE_TO });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("passes all params together", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
+    mock.geoPoints.loaded();
     const result = await fetchGeoPoints({
-      borough: "BROOKLYN",
-      complaintType: "Rodent",
-      status: "Closed",
-      dateFrom: "2025-01-01",
-      dateTo: "2025-12-31",
+      borough: BOROUGH_BROOKLYN,
+      complaintType: COMPLAINT_RODENT,
+      status: STATUS_CLOSED,
+      dateFrom: DATE_FROM,
+      dateTo: DATE_TO,
     });
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("returns empty array on failure with params", async () => {
-    mock.failure(E.geoPoints);
-    const result = await fetchGeoPoints({ borough: "BRONX" });
+    mock.geoPoints.failure();
+    const result = await fetchGeoPoints({ borough: BOROUGH_BRONX });
     expect(result).toEqual([]);
   });
 });
 
 describe("fetchLastRefresh", () => {
   it("returns parsed refresh data on success", async () => {
-    mock.success(E.lastRefresh, F.lastRefresh.ok);
+    mock.lastRefresh.loaded();
     await expectResult(fetchLastRefresh, F.lastRefresh.ok);
   });
 
   it("returns null on server error", async () => {
-    mock.failure(E.lastRefresh);
+    mock.lastRefresh.failure();
     await expectResult(fetchLastRefresh, F.lastRefresh.empty);
   });
 
   it("returns null on network failure", async () => {
-    mock.offline(E.lastRefresh);
+    mock.lastRefresh.offline();
     await expectResult(fetchLastRefresh, F.lastRefresh.empty);
   });
 
   it("returns the fixture payload on a successful response", async () => {
-    await expectResult(() => fetchGeoPoints(), FIXTURES.geoPoints.ok);
+    await expectResult(() => fetchGeoPoints(), F.geoPoints.ok);
   });
 
   it("calls the geopoints endpoint with no query string when called with no params", async () => {
     await fetchGeoPoints();
-
     expect(new URL(lastUrl).pathname).toBe(ENDPOINTS.geoPoints);
   });
 
   it("does not append a trailing ? when called with no params", async () => {
     await fetchGeoPoints();
-
     expect(lastUrl).not.toContain("?");
   });
 
@@ -143,112 +156,102 @@ describe("fetchLastRefresh", () => {
       dateFrom: undefined,
       dateTo: undefined,
     });
-
     expect(lastUrl).not.toContain("?");
   });
 
   it("appends complaintType to the query string when provided", async () => {
-    await fetchGeoPoints({ complaintType: "Noise" });
-
+    await fetchGeoPoints({ complaintType: COMPLAINT_NOISE });
     expect(lastUrl).toContain("complaintType=Noise");
   });
 
   it("appends borough to the query string when provided", async () => {
-    await fetchGeoPoints({ borough: "Manhattan" });
-
-    expect(lastUrl).toContain("borough=Manhattan");
+    await fetchGeoPoints({ borough: BOROUGH_MANHATTAN });
+    expect(lastUrl).toContain(`borough=${BOROUGH_MANHATTAN}`);
   });
 
   it("appends status to the query string when provided", async () => {
-    await fetchGeoPoints({ status: "Open" });
-
-    expect(lastUrl).toContain("status=Open");
+    await fetchGeoPoints({ status: STATUS_OPEN });
+    expect(lastUrl).toContain(`status=${STATUS_OPEN}`);
   });
 
   it("appends dateFrom to the query string when provided", async () => {
-    await fetchGeoPoints({ dateFrom: "2026-01-01" });
-
-    expect(lastUrl).toContain("dateFrom=2026-01-01");
+    await fetchGeoPoints({ dateFrom: DATE_FROM_NEXT_YEAR });
+    expect(lastUrl).toContain(`dateFrom=${DATE_FROM_NEXT_YEAR}`);
   });
 
   it("appends dateTo to the query string when provided", async () => {
-    await fetchGeoPoints({ dateTo: "2026-03-01" });
-
-    expect(lastUrl).toContain("dateTo=2026-03-01");
+    await fetchGeoPoints({ dateTo: DATE_TO_NEXT_YEAR });
+    expect(lastUrl).toContain(`dateTo=${DATE_TO_NEXT_YEAR}`);
   });
 
   it("appends all five params when all are provided", async () => {
     await fetchGeoPoints({
-      complaintType: "Noise",
-      borough: "Bronx",
-      status: "Open",
-      dateFrom: "2026-01-01",
-      dateTo: "2026-03-01",
+      complaintType: COMPLAINT_RODENT,
+      borough: BOROUGH_BRONX,
+      status: STATUS_OPEN,
+      dateFrom: DATE_FROM_NEXT_YEAR,
+      dateTo: DATE_TO_NEXT_YEAR,
     });
-
-    expect(lastUrl).toContain("complaintType=Noise");
-    expect(lastUrl).toContain("borough=Bronx");
-    expect(lastUrl).toContain("status=Open");
-    expect(lastUrl).toContain("dateFrom=2026-01-01");
-    expect(lastUrl).toContain("dateTo=2026-03-01");
+    expect(lastUrl).toContain(`complaintType=${COMPLAINT_RODENT}`);
+    expect(lastUrl).toContain(`borough=${BOROUGH_BRONX}`);
+    expect(lastUrl).toContain(`status=${STATUS_OPEN}`);
+    expect(lastUrl).toContain(`dateFrom=${DATE_FROM_NEXT_YEAR}`);
+    expect(lastUrl).toContain(`dateTo=${DATE_TO_NEXT_YEAR}`);
   });
 
   it("appends both date params when a date range is provided", async () => {
-    await fetchGeoPoints({ dateFrom: "2026-01-01", dateTo: "2026-03-01" });
-
-    expect(lastUrl).toContain("dateFrom=2026-01-01");
-    expect(lastUrl).toContain("dateTo=2026-03-01");
+    await fetchGeoPoints({ dateFrom: DATE_FROM_NEXT_YEAR, dateTo: DATE_TO_NEXT_YEAR });
+    expect(lastUrl).toContain(`dateFrom=${DATE_FROM_NEXT_YEAR}`);
+    expect(lastUrl).toContain(`dateTo=${DATE_TO_NEXT_YEAR}`);
   });
 
   it("appends complaintType and dateFrom together for an AND filter combination", async () => {
-    await fetchGeoPoints({ complaintType: "Noise", dateFrom: "2026-01-01" });
-
+    await fetchGeoPoints({ complaintType: COMPLAINT_NOISE, dateFrom: DATE_FROM_NEXT_YEAR });
     expect(lastUrl).toContain("complaintType=Noise");
-    expect(lastUrl).toContain("dateFrom=2026-01-01");
+    expect(lastUrl).toContain(`dateFrom=${DATE_FROM_NEXT_YEAR}`);
   });
 
   it("does not append complaintType when undefined — other params still appear", async () => {
-    await fetchGeoPoints({ complaintType: undefined, borough: "Brooklyn" });
-
+    await fetchGeoPoints({ complaintType: undefined, borough: BOROUGH_BROOKLYN });
     expect(lastUrl).not.toContain("complaintType");
-    expect(lastUrl).toContain("borough=Brooklyn");
+    expect(lastUrl).toContain(`borough=${BOROUGH_BROOKLYN}`);
   });
 
   it("does not append dateFrom when undefined — dateTo still appears", async () => {
-    await fetchGeoPoints({ dateFrom: undefined, dateTo: "2026-03-01" });
+    await fetchGeoPoints({ dateFrom: undefined, dateTo: DATE_TO_NEXT_YEAR });
     expect(lastUrl).not.toContain("dateFrom");
-    expect(lastUrl).toContain("dateTo=2026-03-01");
+    expect(lastUrl).toContain(`dateTo=${DATE_TO_NEXT_YEAR}`);
   });
 
   it("does not append dateTo when undefined — dateFrom still appears", async () => {
-    await fetchGeoPoints({ dateFrom: "2026-01-01", dateTo: undefined });
-    expect(lastUrl).toContain("dateFrom=2026-01-01");
+    await fetchGeoPoints({ dateFrom: DATE_FROM_NEXT_YEAR, dateTo: undefined });
+    expect(lastUrl).toContain(`dateFrom=${DATE_FROM_NEXT_YEAR}`);
     expect(lastUrl).not.toContain("dateTo");
   });
 
   it("uses a ? separator before the first query param when params are present", async () => {
-    await fetchGeoPoints({ status: "Closed" });
+    await fetchGeoPoints({ status: STATUS_CLOSED });
     const search = new URL(lastUrl).search;
     expect(search).toMatch(/^\?/);
   });
 
   it("returns an empty array when the server responds with a 500", async () => {
-    mock.failure(ENDPOINTS.geoPoints);
+    mock.geoPoints.failure();
     await expectResult(() => fetchGeoPoints(), []);
   });
 
   it("returns an empty array when the server responds with a 404", async () => {
-    mock.failure(ENDPOINTS.geoPoints, 404);
+    mock.geoPoints.failure(HTTP_NOT_FOUND);
     await expectResult(() => fetchGeoPoints(), []);
   });
 
   it("returns an empty array when the request fails with a network error", async () => {
-    mock.offline(ENDPOINTS.geoPoints);
+    mock.geoPoints.offline();
     await expectResult(() => fetchGeoPoints(), []);
   });
 
   it("resolves with an empty array on any failure without throwing", async () => {
-    mock.failure(ENDPOINTS.geoPoints);
+    mock.geoPoints.failure();
     await expectResult(() => fetchGeoPoints(), []);
   });
 });

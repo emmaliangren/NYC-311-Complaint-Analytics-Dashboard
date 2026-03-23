@@ -13,7 +13,7 @@ import {
 describe("ToastMessage", () => {
   const defaultProps = {
     message: TEST_MESSAGE,
-    visible: true,
+    isVisible: true,
     onClose: vi.fn(),
   };
 
@@ -22,15 +22,15 @@ describe("ToastMessage", () => {
     expect(screen.getByText(TEST_MESSAGE)).toBeInTheDocument();
   });
 
-  it("should have visible classes when visible is true", () => {
+  it("should have isVisible classes when isVisible is true", () => {
     render(<ToastMessage {...defaultProps} />);
     const toast = screen.getByRole("alert");
     expect(toast).toHaveClass(OPACITY_STYLE.VISIBLE);
     expect(toast).not.toHaveClass(INVISIBLE_DISABLE_EVENTS);
   });
 
-  it("sould have hidden classes when visible is false", () => {
-    render(<ToastMessage {...defaultProps} visible={false} />);
+  it("sould have hidden classes when isVisible is false", () => {
+    render(<ToastMessage {...defaultProps} isVisible={false} />);
     const toast = screen.getByRole("alert");
     expect(toast).toHaveClass(OPACITY_STYLE.NOT_VISIBLE);
     expect(toast).toHaveClass(INVISIBLE_DISABLE_EVENTS);
@@ -82,12 +82,12 @@ describe("ToastMessage", () => {
       expect(onClose).not.toHaveBeenCalled();
     });
 
-    it("should not auto-dismiss when not visible", () => {
+    it("should not auto-dismiss when not isVisible", () => {
       const onClose = vi.fn();
       render(
         <ToastMessage
           {...defaultProps}
-          visible={false}
+          isVisible={false}
           onClose={onClose}
           duration={TIMER_DURATION}
         />

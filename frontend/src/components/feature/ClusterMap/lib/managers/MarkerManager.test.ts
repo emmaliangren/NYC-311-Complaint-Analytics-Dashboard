@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import L from "leaflet";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MarkerManager } from "./MarkerManager";
 import { IconFactory } from "./IconFactory";
 import { PopupFactory } from "./PopupFactory";
-import { POINT, POINTS } from "../constants";
+import { POINT, POINTS } from "@/mocks";
 import { PANE_OPACITY_VISIBLE } from "./constants";
 import type { MarkerManagerCallbacks } from "./types";
 import { COMPLAINT_TYPES } from "@/lib/api.constants";

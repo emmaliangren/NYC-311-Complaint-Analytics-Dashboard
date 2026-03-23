@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DataService } from "./DataService";
-import { mock } from "@/mocks/mock";
-import { ENDPOINTS as E, FIXTURES as F } from "@/mocks/constants";
+import { FIXTURES as F, mock } from "@/mocks";
 import * as api from "@/lib/api";
 
 beforeEach(() => {
@@ -10,7 +9,7 @@ beforeEach(() => {
 
 describe("DataService", () => {
   it("calls fetchGeoPoints when useMock=false and fetchGeoPointsMock when true", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
+    mock.geoPoints.loaded();
     const svc = new DataService();
     expect(await svc.fetchPoints()).toEqual(F.geoPoints.ok);
 
@@ -45,7 +44,7 @@ describe("DataService", () => {
   });
 
   it("returns [] after a failed fetch", async () => {
-    mock.offline(E.geoPoints);
+    mock.geoPoints.offline();
     const svc = new DataService();
     const result = await svc.fetchPoints();
     expect(result).toEqual([]);
@@ -68,7 +67,7 @@ describe("DataService", () => {
   });
 
   it("resolves correctly after mock is toggled", async () => {
-    mock.success(E.geoPoints, F.geoPoints.ok);
+    mock.geoPoints.loaded();
     vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue(F.geoPoints.ok);
 
     const svc = new DataService();

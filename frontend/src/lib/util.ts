@@ -1,10 +1,14 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { COMPLAINT_TYPES, NEIGHBOURHOODS, TOTAL_MOCK_POINTS } from "./api.constants";
+import { COMPLAINT_TYPES, NEIGHBOURHOODS, STATUSES, TOTAL_MOCK_POINTS } from "./api.constants";
 import type { GeoPoint } from "@/types/geopoints";
-import { STATUSES } from "@/components/feature/ClusterMap/lib/constants";
+import { AGENCIES } from "./agency";
 
 export const logError = (error: unknown) => {
+  console.error(getError(error));
+};
+
+export const logWarning = (error: unknown) => {
   console.error(getError(error));
 };
 
@@ -67,25 +71,29 @@ const pickNeighbourhood = () => {
   return NEIGHBOURHOODS[NEIGHBOURHOODS.length - 1];
 };
 
-export const MOCK_POINTS: GeoPoint[] = Array.from({ length: TOTAL_MOCK_POINTS }, (_, i) => {
-  const n = pickNeighbourhood();
+let _mockPoints: GeoPoint[] | null = null;
 
-  const isOutlier = rng() < 0.06;
-  const spread = isOutlier ? n.spread * 4.5 : n.spread;
-
-  const lat = n.lat + gauss(spread);
-  const lng = n.lng + gauss(spread * 1.1);
-
-  const colocated = rng() < 0.08;
-  const snapJitter = 0.00005;
-
-  return {
-    uniqueKey: String(i + 1),
-    latitude: colocated ? Math.round(lat / snapJitter) * snapJitter : lat,
-    longitude: colocated ? Math.round(lng / snapJitter) * snapJitter : lng,
-    complaintType: pick(COMPLAINT_TYPES),
-    borough: n.borough,
-    status: pick(STATUSES),
-    createdDate: randomDate(),
-  };
-});
+export const getMockPoints = (): GeoPoint[] => {
+  if (_mockPoints) return _mockPoints;
+  resetSeed();
+  _mockPoints = Array.from({ length: TOTAL_MOCK_POINTS }, (_, i) => {
+    const n = pickNeighbourhood();
+    const isOutlier = rng() < 0.06;
+    const spread = isOutlier ? n.spread * 4.5 : n.spread;
+    const lat = n.lat + gauss(spread);
+    const lng = n.lng + gauss(spread * 1.1);
+    const colocated = rng() < 0.08;
+    const snapJitter = 0.00005;
+    return {
+      uniqueKey: String(i + 1),
+      latitude: colocated ? Math.round(lat / snapJitter) * snapJitter : lat,
+      longitude: colocated ? Math.round(lng / snapJitter) * snapJitter : lng,
+      borough: n.borough,
+      status: pick(STATUSES),
+      agency: pick(AGENCIES),
+      complaintType: pick(COMPLAINT_TYPES),
+      createdDate: randomDate(),
+    };
+  });
+  return _mockPoints;
+};

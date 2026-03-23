@@ -1,14 +1,14 @@
-import FilterDropdown from "./FilterDropdown";
+import type { FilterValue } from "@/components/ui/Dropdown/types";
 import { useFilters } from "@/context/FilterProvider";
-import type { FilterValue } from "./types";
 import { FILTERS } from "./constants";
+import { Dropdown } from "@/components/ui";
 
 const CategoryFilter = () => {
   const filters = useFilters();
   return (
     <div className="flex flex-col gap-3">
       {FILTERS.map(({ id, label, defaultLabel, key, value, setter }) => (
-        <FilterDropdown
+        <Dropdown
           key={id}
           id={id}
           label={label}
@@ -16,8 +16,8 @@ const CategoryFilter = () => {
           value={filters[value] as FilterValue}
           onChange={filters[setter] as (value: FilterValue | undefined) => void}
           options={filters.options[key]}
-          loading={filters.loading}
-          error={filters.error}
+          loading={filters.isLoading}
+          error={filters.isError}
         />
       ))}
     </div>

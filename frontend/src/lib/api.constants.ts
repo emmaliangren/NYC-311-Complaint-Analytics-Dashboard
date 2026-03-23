@@ -1,12 +1,19 @@
 import type { Borough, ComplaintType, Neighbourhood, Status } from "@/types/api";
 
-export const API_HEALTH_URL = "/api/health";
-export const API_GEO_POINTS_URL = "/api/complaints/geopoints";
-export const API_FILTER_OPTIONS_URL = "/api/complaints/filter-options";
-export const API_LAST_REFRESH_URL = "/api/refreshlogs/latest";
+export const ENDPOINTS = {
+  health: "/api/health",
+  geoPoints: "/api/complaints/geopoints",
+  filterOptions: "/api/complaints/filter-options",
+  lastRefresh: "/api/refreshlogs/latest",
+  resolutionTime: "/api/complaints/resolution-time",
+  summary: "/api/stats/summary",
+} as const;
 
 export const TOTAL_MOCK_POINTS = 1800;
 export const MOCK_DELAY_MS = 500;
+
+export const DATE_PAST = "2025-03-04";
+export const DATE_NOW = "2026-01-02";
 
 export const COMPLAINT_TYPES: ComplaintType[] = [
   "Noise - Residential",
@@ -28,21 +35,57 @@ export const COMPLAINT_TYPES: ComplaintType[] = [
 
 export const STATUSES: Status[] = [
   "Open",
-  "Open",
-  "Open",
   "Closed",
-  "Closed",
-  "Closed",
-  "In Progress",
   "In Progress",
   "Assigned",
   "Started",
   "Pending",
 ];
 
+const STATUS_WEIGHTS: Record<Status, number> = {
+  Open: 3,
+  Closed: 3,
+  "In Progress": 2,
+  Assigned: 1,
+  Started: 1,
+  Pending: 1,
+  default: 0,
+};
+
+export const WEIGHTED_STATUSES: Status[] = STATUSES.flatMap((s) =>
+  Array.from({ length: STATUS_WEIGHTS[s] }, () => s)
+);
+
 export const BOROUGHS: Borough[] = ["MANHATTAN", "BROOKLYN", "QUEENS", "BRONX", "STATEN ISLAND"];
 
-const MANHATTAN: Neighbourhood[] = [];
+const MANHATTAN: Neighbourhood[] = [
+  { name: "Harlem", borough: "MANHATTAN", lat: 40.8116, lng: -73.9465, spread: 0.013, weight: 10 },
+  {
+    name: "Upper East Side",
+    borough: "MANHATTAN",
+    lat: 40.7736,
+    lng: -73.9566,
+    spread: 0.012,
+    weight: 8,
+  },
+  {
+    name: "Lower East Side",
+    borough: "MANHATTAN",
+    lat: 40.715,
+    lng: -73.9843,
+    spread: 0.011,
+    weight: 9,
+  },
+  { name: "Midtown", borough: "MANHATTAN", lat: 40.7549, lng: -73.984, spread: 0.012, weight: 7 },
+  {
+    name: "Washington Heights",
+    borough: "MANHATTAN",
+    lat: 40.8417,
+    lng: -73.9394,
+    spread: 0.012,
+    weight: 8,
+  },
+];
 
 const BROOKLYN: Neighbourhood[] = [
   {

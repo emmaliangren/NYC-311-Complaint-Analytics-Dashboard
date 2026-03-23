@@ -1,10 +1,13 @@
 .PHONY: help \
-	up down build logs \
+	down downv downV \
+	up build \
 	ps \
 	ports ports-kill ports-kill-frontend ports-kill-backend ports-kill-ingestor ports-kill-db \
 	restart restart-frontend restart-backend restart-ingestor restart-db \
+	logs logs-frontend logs-backend logs-ingestor \
 	prune clean nuke \
-	test test-frontend test-backend test-ingestor \
+	test test-frontend test-backend test-ingestor test-ingestor-pytest\
+	gradle-clear-cache \
 	lint lint-frontend lint-backend lint-ingestor lint-f-ingestor\
 	ci ci-frontend ci-backend ci-ingestor \
 	reports reports-frontend reports-backend reports-test-backend reports-jacoco-backend reports-ingestor reports-t-ingestor \
@@ -17,9 +20,12 @@ help:
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  up                          docker compose up -d"
 	@echo "  down                        docker compose down"
+	@echo "  downv                       docker compose down -v"
+	@echo "  downV                       docker compose down -V"
+	@echo ""
 	@echo "  build                       docker compose up --build -d"
+	@echo "  up                          docker compose up -d"
 	@echo ""
 	@echo "  ps                          docker compose ps"
 	@echo ""
@@ -50,6 +56,9 @@ help:
 	@echo "  test-frontend               run frontend tests"
 	@echo "  test-backend                run backend tests"
 	@echo "  test-ingestor               run ingestor tests"
+	@echo "  test-ingestor-pytest        run ingestor tests using pytest"
+	@echo ""
+	@echo "  gradle-clear-cache          clear stale Gradle lock files in backend container"
 	@echo ""
 	@echo "  lint                        lint all services"
 	@echo "  lint-frontend               lint frontend"
@@ -109,6 +118,10 @@ up:
 	docker compose up -d
 down:
 	docker compose down
+downv:
+	docker compose down -v
+downV:
+	docker compose down -V
 build:
 	docker compose up --build -d
 
@@ -158,15 +171,18 @@ nuke:
 
 test: test-frontend test-backend test-ingestor
 test-frontend:
-	docker compose exec frontend npm test
+	docker compose run --rm frontend npm test
 test-backend:
-	docker compose exec backend ./gradlew test
+	docker compose run --rm backend sh -c "rm -rf /app/.gradle/* /app/.gradle/.[!.]* 2>/dev/null; ./gradlew test --no-daemon"
 test-ingestor:
 	docker compose --profile test run --rm ingestor-test
-test-ingestor2:
-	docker compose exec ingestor pytest
+test-ingestor-pytest:
+	docker compose run --rm ingestor pytest
 
-lint: lint-frontend lint-backend lint-ingestor
+gradle-clear-cache:
+	docker compose exec backend rm -rf /app/.gradle
+
+lint: lint-frontend lint-backend lint ingestor
 lint-frontend:
 	docker compose exec frontend npm run lint
 lint-backend:
@@ -182,7 +198,8 @@ ci-frontend:
 ci-backend:
 	docker compose exec backend ./gradlew check
 ci-ingestor:
-	docker compose exec ingestor sh -c "git diff --exit-code || black .; pytest"
+	cd ingestor && git diff --exit-code
+	docker compose exec ingestor sh -c "black . && pytest"
 
 reports: reports-frontend reports-backend reports-ingestor
 reports-frontend:
@@ -209,7 +226,7 @@ db:
 db-tables:
 	docker compose exec db mariadb -udev -pdev devdb -e "SHOW TABLES;"
 db-schema:
-	docker compose exec db mariadb -udev -pdev devdb -e "SHOW CREATE TABLE complaints\G; SHOW CREATE TABLE data_refresh_log\G;"
+	docker compose exec db mariadb-dump -udev -pdev --no-data devdb
 db-users:
 	docker compose exec db mariadb -uroot -p$$(grep DB_ROOT_PASSWORD .env | cut -d= -f2) -e "SELECT user, host FROM mysql.user;"
 db-grants:
@@ -269,4 +286,3 @@ deploy-files-backend:
 	docker compose -f docker-compose.deploy.yml exec backend find /app -type f -not -path "*/.gradle/*" -not -path "*/build/*"
 deploy-files-ingestor:
 	docker compose -f docker-compose.deploy.yml exec ingestor find /app -type f
-

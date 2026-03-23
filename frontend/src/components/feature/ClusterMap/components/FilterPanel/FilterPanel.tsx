@@ -7,7 +7,6 @@ const FilterPanel = forwardRef<HTMLDivElement, FilterPanelProps>(
   (
     {
       children,
-      totalCount,
       filteredCount,
       viewportCount,
       isExpanded,
@@ -58,7 +57,6 @@ const FilterPanel = forwardRef<HTMLDivElement, FilterPanelProps>(
             activeTab={activeTab}
             onTabChange={onTabChange}
             onHide={onCollapse}
-            totalCount={totalCount}
             filteredCount={filteredCount}
             viewportCount={viewportCount}
           >

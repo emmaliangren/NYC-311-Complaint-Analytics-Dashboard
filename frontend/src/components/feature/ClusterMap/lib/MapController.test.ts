@@ -1,20 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MapController } from "./MapController";
-import { MAX_ZOOM, MIN_ZOOM } from "./constants";
-import { mock } from "@/mocks/mock";
-import { ENDPOINTS, FIXTURES } from "@/mocks/constants";
+import {
+  CONTAINER_HEIGHT,
+  CONTAINER_WIDTH,
+  DEBOUNCE_HALF_MS,
+  DEBOUNCE_JUST_UNDER_MS,
+  DEBOUNCE_MS,
+  DEBOUNCE_OVER_MS,
+  INTERVAL_ADVANCE_MS,
+  MAX_ZOOM,
+  MIN_ZOOM,
+} from "./constants";
+import {
+  BASE_POINT,
+  BOROUGH_BROOKLYN,
+  BOROUGH_MANHATTAN,
+  COMPLAINT_HOT_WATER,
+  COMPLAINT_RODENT,
+  DATE_FROM,
+  DATE_FROM_FUTURE,
+  DATE_TO,
+  DATE_TO_PAST,
+  STATUS_CLOSED,
+  STATUS_OPEN,
+} from "../constants";
+import { mock } from "@/mocks";
 import type { MapControllerCallbacks } from "./types";
-import type { GeoPoint } from "@/types/geopoints";
-
-const CONTAINER_WIDTH = "800px";
-const CONTAINER_HEIGHT = "600px";
-
-const DEBOUNCE_MS = 100;
-const DEBOUNCE_HALF_MS = DEBOUNCE_MS / 2;
-const DEBOUNCE_JUST_UNDER_MS = DEBOUNCE_MS - 1;
-const DEBOUNCE_OVER_MS = DEBOUNCE_MS * 2;
-
-const INTERVAL_ADVANCE_MS = 10_000;
 
 const makeCallbacks = (
   overrides: Partial<MapControllerCallbacks> = {}
@@ -36,13 +47,11 @@ const makeContainer = () => {
   return el;
 };
 
-// tests
-
 let container: HTMLDivElement;
 let controller: MapController;
 
 beforeEach(() => {
-  mock.success(ENDPOINTS.geoPoints, FIXTURES.geoPoints.ok);
+  mock.geoPoints.loaded();
   container = makeContainer();
 });
 
@@ -163,24 +172,14 @@ describe("MapController.debounce", () => {
   });
 });
 
-const BASE_POINT: GeoPoint = {
-  uniqueKey: "cf-1",
-  latitude: 40.71,
-  longitude: -74.0,
-  complaintType: "Noise",
-  borough: "Manhattan",
-  createdDate: "2025-06-15",
-  status: "Open",
-};
-
 const waitForEmpty = (callbacks: MapControllerCallbacks) =>
   vi.waitFor(() => {
     expect(callbacks.onEmptyChange).toHaveBeenCalledWith(true);
   });
 
-describe("MapController.applyFilters — client-side filter branches", () => {
+describe("MapController.applyFilters: client-side filter branches", () => {
   beforeEach(() => {
-    mock.success(ENDPOINTS.geoPoints, [BASE_POINT]);
+    mock.geoPoints.loaded([BASE_POINT]);
   });
 
   it("borough mismatch marks map empty", async () => {
@@ -188,7 +187,7 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     controller = new MapController(callbacks);
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
-    controller.applyFilters({ borough: "Brooklyn" });
+    controller.applyFilters({ borough: BOROUGH_BROOKLYN });
     await waitForEmpty(callbacks);
   });
 
@@ -197,7 +196,7 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     controller = new MapController(callbacks);
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
-    controller.applyFilters({ complaintType: "Heat/Hot Water" });
+    controller.applyFilters({ complaintType: COMPLAINT_HOT_WATER });
     await waitForEmpty(callbacks);
   });
 
@@ -206,7 +205,7 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     controller = new MapController(callbacks);
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
-    controller.applyFilters({ status: "Closed" });
+    controller.applyFilters({ status: STATUS_CLOSED });
     await waitForEmpty(callbacks);
   });
 
@@ -215,7 +214,7 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     controller = new MapController(callbacks);
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
-    controller.applyFilters({ dateFrom: "2025-12-01" });
+    controller.applyFilters({ dateFrom: DATE_FROM_FUTURE });
     await waitForEmpty(callbacks);
   });
 
@@ -224,7 +223,7 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     controller = new MapController(callbacks);
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
-    controller.applyFilters({ dateTo: "2025-01-01" });
+    controller.applyFilters({ dateTo: DATE_TO_PAST });
     await waitForEmpty(callbacks);
   });
 
@@ -234,11 +233,11 @@ describe("MapController.applyFilters — client-side filter branches", () => {
     await controller.mount(container);
     (callbacks.onEmptyChange as ReturnType<typeof vi.fn>).mockClear();
     controller.applyFilters({
-      borough: "Manhattan",
-      complaintType: "Noise",
-      status: "Open",
-      dateFrom: "2025-01-01",
-      dateTo: "2025-12-31",
+      borough: BOROUGH_MANHATTAN,
+      complaintType: COMPLAINT_RODENT,
+      status: STATUS_OPEN,
+      dateFrom: DATE_FROM,
+      dateTo: DATE_TO,
     });
     await vi.waitFor(() => {
       expect(callbacks.onEmptyChange).toHaveBeenCalledWith(false);

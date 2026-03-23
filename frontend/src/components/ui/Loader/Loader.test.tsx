@@ -41,18 +41,18 @@ describe("Loader", () => {
   });
 
   it("should show default label when spinner is hidden and no label is provided", () => {
-    render(<Loader showSpinner={false} />);
+    render(<Loader isShowSpinner={false} />);
     expect(screen.getByText(DEFAULT_LABEL)).toBeInTheDocument();
   });
 
   it("should use custom label over default when spinner is hidden", () => {
-    render(<Loader showSpinner={false} label={DEFAULT_LABEL_ONLY} />);
+    render(<Loader isShowSpinner={false} label={DEFAULT_LABEL_ONLY} />);
     expect(screen.getByText(DEFAULT_LABEL_ONLY)).toBeInTheDocument();
     expect(screen.queryByText(DEFAULT_LABEL)).not.toBeInTheDocument();
   });
 
-  it("should not render the spinner when showSpinner is false", () => {
-    const { container } = render(<Loader showSpinner={false} />);
+  it("should not render the spinner when isShowSpinner is false", () => {
+    const { container } = render(<Loader isShowSpinner={false} />);
     expect(container.querySelector(`.${SPINNER_CLASS}`)).not.toBeInTheDocument();
   });
 

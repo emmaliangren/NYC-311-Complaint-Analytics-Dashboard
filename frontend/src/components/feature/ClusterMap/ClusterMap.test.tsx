@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactElement } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -7,63 +7,110 @@ import {
   DEFAULT_REFRESH_INTERVAL_MS,
   MAP_TESTID,
   ONE_HOUR_MS,
-  POINT,
-  POINTS,
-  STATUSES,
   TEST_WAITFOR_TIMEOUT_MS,
   TEXT_COORDINATES,
   TEXT_LOAD_MOCK_DATA,
 } from "@/components/feature/ClusterMap/lib/constants";
 import * as api from "@/lib/api";
-import { ENDPOINTS } from "@/mocks/constants";
-import { mock } from "@/mocks/mock";
-import { COMPLAINT_TYPES } from "@/lib/api.constants";
-import type { MapControllerCallbacks } from "./lib";
+import { mock, POINT, POINTS } from "@/mocks";
 import { FilterProvider } from "@/context/FilterProvider";
+import {
+  BASE_LAT,
+  BTN_ACTIVE_TAB,
+  BTN_RESET_ALL,
+  BTN_TOGGLE_FILTERS,
+  COMPLAINT_HOT_WATER,
+  COMPLAINT_NOISE_RESIDENTIAL,
+  CREATED_DATE_A,
+  CREATED_DATE_B,
+  DATE_FILTER_FUTURE,
+  DATE_INPUT_COUNT,
+  LABEL_REMOVE_STATUS_OPEN,
+  LABEL_STATUS_COMBOBOX,
+  LABEL_STATUS_OPEN_OPTION,
+  LAT_STEP,
+  OFFSET_LAT,
+  STATUS_CLOSED,
+  TEXT_NO_COMPLAINTS_MATCH,
+} from "./constants";
+import { COMPLAINT_TYPES, STATUSES } from "@/lib/api.constants";
+import type { ComplaintType } from "@/types";
+import type { MapControllerCallbacks } from "./lib";
 
-const BTN_TOGGLE_FILTERS = "Toggle filters";
-const BTN_RESET_ALL = "Reset all";
-const BTN_ACTIVE_TAB = /active/i;
-const LABEL_STATUS_COMBOBOX = "Status";
-const LABEL_STATUS_OPEN_OPTION = "Open";
-const LABEL_REMOVE_STATUS_OPEN = "Remove Status: Open filter";
-const TEXT_NO_COMPLAINTS_MATCH = "No complaints match.";
+const renderWithFilters = (
+  ui: ReactElement = <ClusterMap isWalkthroughOpen={false} setIsWalkthroughOpen={() => {}} />
+) => render(<FilterProvider>{ui}</FilterProvider>);
 
-const renderWithFilters = (ui: React.ReactElement = <ClusterMap />) =>
-  render(<FilterProvider>{ui}</FilterProvider>);
+const { makeMockController, HOISTED_MOCK_POINT, HOISTED_MOCK_FILTER_OPTIONS } = vi.hoisted(() => {
+  const HOISTED_ZOOM_LEVEL = 10;
+  const HOISTED_MAX_ZOOM = 18;
+  const HOISTED_MIN_ZOOM = 10;
 
-const makeMockController = vi.hoisted(
-  () =>
-    (overrides: Partial<{ isEmpty: boolean }> = {}) =>
-      function (this: unknown, callbacks: MapControllerCallbacks) {
-        return {
-          mount: vi.fn().mockImplementation(async () => {
-            callbacks.onLoadingChange(false);
-            callbacks.onEmptyChange(overrides.isEmpty ?? false);
-            callbacks.onZoomChange(10);
-          }),
-          destroy: vi.fn(),
-          zoomIn: vi.fn(),
-          zoomOut: vi.fn(),
-          resetView: vi.fn(),
-          setUseMock: vi.fn().mockImplementation(() => {
-            callbacks.onEmptyChange(false);
-            callbacks.onLoadingChange(false);
-          }),
-          applyFilters: vi.fn(),
-          reload: vi.fn(),
-          getMaxZoom: vi.fn().mockReturnValue(18),
-          getMinZoom: vi.fn().mockReturnValue(10),
-          fetchGeoPoints: vi.fn().mockResolvedValue([]),
-          fetchGeoPointsMock: vi.fn().mockResolvedValue([]),
-          fetchFilterOptions: vi.fn().mockResolvedValue({
-            boroughs: [],
-            complaintTypes: [],
-            statuses: [],
-          }),
-        };
-      }
-);
+  const HOISTED_MOCK_POINT = {
+    uniqueKey: "1",
+    latitude: 40.71,
+    longitude: -74.0,
+    complaintType: "Noise",
+    borough: "Manhattan",
+    createdDate: "2025-03-01",
+    status: "Open" as const,
+  };
+
+  const HOISTED_MOCK_FILTER_OPTIONS = {
+    complaintTypes: ["Noise - Residential", "Heat/Hot Water"],
+    boroughs: ["MANHATTAN", "BROOKLYN"],
+    statuses: ["Open", "Closed", "In Progress"],
+  };
+
+  const HOISTED_EMPTY_FILTER_OPTIONS = {
+    boroughs: [] as string[],
+    complaintTypes: [] as string[],
+    statuses: [] as string[],
+  };
+
+  const makeMockController = (
+    overrides: Partial<{ isEmpty: boolean; applyFiltersEmpty: boolean }> = {}
+  ) =>
+    function (this: unknown, callbacks: MapControllerCallbacks) {
+      return {
+        mount: vi.fn().mockImplementation(async () => {
+          callbacks.onLoadingChange(false);
+          callbacks.onEmptyChange(overrides.isEmpty ?? false);
+          callbacks.onZoomChange(HOISTED_ZOOM_LEVEL);
+        }),
+        destroy: vi.fn(),
+        zoomIn: vi.fn(),
+        zoomOut: vi.fn(),
+        resetView: vi.fn(),
+        applyFilters: overrides.applyFiltersEmpty
+          ? vi.fn().mockImplementation(() => {
+              callbacks.onEmptyChange(true);
+              callbacks.onLoadingChange(false);
+            })
+          : vi.fn(),
+        setUseMock: vi.fn().mockImplementation(() => {
+          callbacks.onEmptyChange(false);
+          callbacks.onLoadingChange(false);
+        }),
+        reload: vi.fn(),
+        getMaxZoom: vi.fn().mockReturnValue(HOISTED_MAX_ZOOM),
+        getMinZoom: vi.fn().mockReturnValue(HOISTED_MIN_ZOOM),
+        fetchGeoPoints: vi.fn().mockResolvedValue([]),
+        fetchGeoPointsMock: vi.fn().mockResolvedValue([]),
+        fetchFilterOptions: vi.fn().mockResolvedValue(HOISTED_EMPTY_FILTER_OPTIONS),
+      };
+    };
+
+  return {
+    makeMockController,
+    HOISTED_MOCK_POINT,
+    HOISTED_MOCK_FILTER_OPTIONS,
+    HOISTED_EMPTY_FILTER_OPTIONS,
+    HOISTED_ZOOM_LEVEL,
+    HOISTED_MAX_ZOOM,
+    HOISTED_MIN_ZOOM,
+  };
+});
 
 vi.mock("./lib/MapController", () => ({
   MapController: vi.fn(makeMockController()),
@@ -75,33 +122,9 @@ vi.mock("./lib/constants", async () => {
 });
 
 vi.mock("@/lib/api", () => ({
-  fetchGeoPoints: vi.fn().mockResolvedValue([
-    {
-      uniqueKey: "1",
-      latitude: 40.71,
-      longitude: -74.0,
-      complaintType: "Noise",
-      borough: "Manhattan",
-      createdDate: "2025-03-01",
-      status: "Open",
-    },
-  ]),
-  fetchGeoPointsMock: vi.fn().mockResolvedValue([
-    {
-      uniqueKey: "1",
-      latitude: 40.71,
-      longitude: -74.0,
-      complaintType: "Noise",
-      borough: "Manhattan",
-      createdDate: "2025-03-01",
-      status: "Open",
-    },
-  ]),
-  fetchFilterOptions: vi.fn().mockResolvedValue({
-    complaintTypes: ["Noise - Residential", "Heat/Hot Water"],
-    boroughs: ["MANHATTAN", "BROOKLYN"],
-    statuses: ["Open", "Closed", "In Progress"],
-  }),
+  fetchGeoPoints: vi.fn().mockResolvedValue([HOISTED_MOCK_POINT]),
+  fetchGeoPointsMock: vi.fn().mockResolvedValue([HOISTED_MOCK_POINT]),
+  fetchFilterOptions: vi.fn().mockResolvedValue(HOISTED_MOCK_FILTER_OPTIONS),
 }));
 
 afterEach(() => {
@@ -148,7 +171,7 @@ describe("ClusterMap zoom buttons", () => {
 
 describe("ClusterMap with null coordinates", () => {
   beforeEach(() => {
-    mock.success(ENDPOINTS.geoPoints, POINTS);
+    mock.geoPoints.loaded(POINTS);
   });
 
   it("skips points with null latitude or longitude", async () => {
@@ -169,7 +192,7 @@ describe("ClusterMap re-render with existing markers", () => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
     });
 
-    mock.success(ENDPOINTS.geoPoints, [{ ...POINTS[0], status: "Closed" }]);
+    mock.geoPoints.loaded([{ ...POINTS[0], status: STATUS_CLOSED }]);
     vi.advanceTimersByTime(ONE_HOUR_MS);
 
     await waitFor(() => {
@@ -182,12 +205,11 @@ describe("ClusterMap re-render with existing markers", () => {
 
 describe("ClusterMap with multiple statuses", () => {
   beforeEach(() => {
-    mock.success(
-      ENDPOINTS.geoPoints,
+    mock.geoPoints.loaded(
       STATUSES.map((status, i) => ({
         ...POINTS[0],
         uniqueKey: String(i + 1),
-        latitude: 40.71 + i * 0.01,
+        latitude: BASE_LAT + i * LAT_STEP,
         status,
       }))
     );
@@ -214,10 +236,10 @@ describe("ClusterMap selectedPoint", () => {
 
 describe("ClusterMap mock data toggle", () => {
   beforeEach(() => {
-    mock.success(ENDPOINTS.geoPoints, []);
+    mock.geoPoints.loaded([]);
     vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue([
       POINTS[0],
-      { ...POINTS[0], uniqueKey: "2", latitude: 40.72 },
+      { ...POINTS[0], uniqueKey: "2", latitude: OFFSET_LAT },
     ]);
   });
 
@@ -247,10 +269,8 @@ describe("ClusterMap theme handling", () => {
     });
     expect(screen.getByTestId(MAP_TESTID)).toBeInTheDocument();
   });
-});
 
-describe("ClusterMap unmount cleanup", () => {
-  it("cleans up map and intervals on unmount", async () => {
+  it("unmounts cleanly", async () => {
     const { unmount } = renderWithFilters();
     await waitFor(() => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -268,12 +288,11 @@ describe("ClusterMap unmount cleanup", () => {
 
 describe("ClusterMap multi-chunk processing", () => {
   beforeEach(() => {
-    mock.success(
-      ENDPOINTS.geoPoints,
+    mock.geoPoints.loaded(
       COMPLAINT_TYPES.map((complaintType, i) => ({
         ...POINTS[0],
         uniqueKey: String.fromCharCode(97 + i),
-        latitude: 40.71 + i * 0.01,
+        latitude: BASE_LAT + i * LAT_STEP,
         complaintType,
       }))
     );
@@ -304,10 +323,20 @@ describe("ClusterMap duplicate POINTS[0] keys", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
     const dupePoints = [
-      { ...POINTS[0], uniqueKey: "1", latitude: 40.71, complaintType: "Noise - Residential" },
-      { ...POINTS[0], uniqueKey: "2", latitude: 40.72, complaintType: "Heat/Hot Water" },
+      {
+        ...POINTS[0],
+        uniqueKey: "1",
+        latitude: BASE_LAT,
+        complaintType: COMPLAINT_NOISE_RESIDENTIAL as ComplaintType,
+      },
+      {
+        ...POINTS[0],
+        uniqueKey: "2",
+        latitude: OFFSET_LAT,
+        complaintType: COMPLAINT_HOT_WATER as ComplaintType,
+      },
     ];
-    mock.success(ENDPOINTS.geoPoints, dupePoints);
+    mock.geoPoints.loaded(dupePoints);
 
     renderWithFilters();
     await waitFor(() => {
@@ -326,7 +355,7 @@ describe("ClusterMap duplicate POINTS[0] keys", () => {
 
 describe("ClusterMap empty mock data", () => {
   it("does not show empty state when mock returns empty (useMock flag)", async () => {
-    mock.success(ENDPOINTS.geoPoints, []);
+    mock.geoPoints.loaded([]);
     vi.spyOn(api, "fetchGeoPointsMock").mockResolvedValue([POINTS[0]]);
 
     const MockedMapController = (await import("./lib/MapController"))
@@ -356,8 +385,8 @@ describe("ClusterMap filter controls", () => {
     await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
     const statusCombobox = screen.getByRole("combobox", { name: LABEL_STATUS_COMBOBOX });
     await userEvent.click(statusCombobox);
-    await userEvent.click(screen.getByRole("option", { name: LABEL_STATUS_OPEN_OPTION }));
-
+    const openOption = await screen.findByRole("option", { name: LABEL_STATUS_OPEN_OPTION });
+    await userEvent.click(openOption);
     await userEvent.click(screen.getByRole("button", { name: BTN_ACTIVE_TAB }));
 
     await waitFor(() => {
@@ -372,24 +401,8 @@ describe("ClusterMap filter controls", () => {
 
   it("clears all filter values after reset", async () => {
     vi.mocked(api.fetchGeoPoints).mockResolvedValue([
-      {
-        uniqueKey: "1",
-        latitude: 40.71,
-        longitude: -74.0,
-        complaintType: "Noise",
-        borough: "MANHATTAN",
-        createdDate: "2025-03-01",
-        status: "Open",
-      },
-      {
-        uniqueKey: "2",
-        latitude: 40.72,
-        longitude: -73.99,
-        complaintType: "Heat",
-        borough: "BROOKLYN",
-        createdDate: "2025-03-02",
-        status: "Closed",
-      },
+      POINT,
+      { ...POINT, uniqueKey: "2", latitude: 40.72, status: "Closed" as const },
     ]);
 
     renderWithFilters();
@@ -400,10 +413,10 @@ describe("ClusterMap filter controls", () => {
     await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
 
     const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
-    expect(dateInputs).toHaveLength(2);
+    expect(dateInputs).toHaveLength(DATE_INPUT_COUNT);
 
-    fireEvent.change(dateInputs[0], { target: { value: "2025-03-01" } });
-    fireEvent.change(dateInputs[1], { target: { value: "2025-03-02" } });
+    fireEvent.change(dateInputs[0], { target: { value: CREATED_DATE_A } });
+    fireEvent.change(dateInputs[1], { target: { value: CREATED_DATE_B } });
 
     await userEvent.click(screen.getByRole("button", { name: BTN_RESET_ALL }));
 
@@ -417,30 +430,7 @@ describe("ClusterMap filter controls", () => {
     const MockedMapController = (await import("./lib/MapController"))
       .MapController as unknown as ReturnType<typeof vi.fn>;
 
-    MockedMapController.mockImplementationOnce(function (
-      this: unknown,
-      callbacks: MapControllerCallbacks
-    ) {
-      return {
-        mount: vi.fn().mockImplementation(async () => {
-          callbacks.onLoadingChange(false);
-          callbacks.onEmptyChange(false);
-          callbacks.onZoomChange(10);
-        }),
-        destroy: vi.fn(),
-        zoomIn: vi.fn(),
-        zoomOut: vi.fn(),
-        resetView: vi.fn(),
-        applyFilters: vi.fn().mockImplementation(() => {
-          callbacks.onEmptyChange(true);
-          callbacks.onLoadingChange(false);
-        }),
-        setUseMock: vi.fn(),
-        reload: vi.fn(),
-        getMaxZoom: vi.fn().mockReturnValue(18),
-        getMinZoom: vi.fn().mockReturnValue(10),
-      };
-    });
+    MockedMapController.mockImplementationOnce(makeMockController({ applyFiltersEmpty: true }));
 
     renderWithFilters();
     await waitFor(() => {
@@ -450,8 +440,8 @@ describe("ClusterMap filter controls", () => {
     await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
 
     const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
-    expect(dateInputs).toHaveLength(2);
-    fireEvent.change(dateInputs[0], { target: { value: "2025-03-10" } });
+    expect(dateInputs).toHaveLength(DATE_INPUT_COUNT);
+    fireEvent.change(dateInputs[0], { target: { value: DATE_FILTER_FUTURE } });
 
     await waitFor(() => {
       expect(screen.getByText(TEXT_NO_COMPLAINTS_MATCH)).toBeVisible();
@@ -462,30 +452,7 @@ describe("ClusterMap filter controls", () => {
     const MockedMapController = (await import("./lib/MapController"))
       .MapController as unknown as ReturnType<typeof vi.fn>;
 
-    MockedMapController.mockImplementationOnce(function (
-      this: unknown,
-      callbacks: MapControllerCallbacks
-    ) {
-      return {
-        mount: vi.fn().mockImplementation(async () => {
-          callbacks.onLoadingChange(false);
-          callbacks.onEmptyChange(false);
-          callbacks.onZoomChange(10);
-        }),
-        destroy: vi.fn(),
-        zoomIn: vi.fn(),
-        zoomOut: vi.fn(),
-        resetView: vi.fn(),
-        applyFilters: vi.fn().mockImplementation(() => {
-          callbacks.onEmptyChange(true);
-          callbacks.onLoadingChange(false);
-        }),
-        setUseMock: vi.fn(),
-        reload: vi.fn(),
-        getMaxZoom: vi.fn().mockReturnValue(18),
-        getMinZoom: vi.fn().mockReturnValue(10),
-      };
-    });
+    MockedMapController.mockImplementationOnce(makeMockController({ applyFiltersEmpty: true }));
 
     renderWithFilters();
     await waitFor(() => {
@@ -495,8 +462,8 @@ describe("ClusterMap filter controls", () => {
     await userEvent.click(screen.getByRole("button", { name: BTN_TOGGLE_FILTERS }));
 
     const dateInputs = document.querySelectorAll<HTMLInputElement>('input[type="date"]');
-    expect(dateInputs).toHaveLength(2);
-    fireEvent.change(dateInputs[0], { target: { value: "2025-03-01" } });
+    expect(dateInputs).toHaveLength(DATE_INPUT_COUNT);
+    fireEvent.change(dateInputs[0], { target: { value: CREATED_DATE_A } });
 
     await waitFor(() => {
       expect(screen.getByText(TEXT_NO_COMPLAINTS_MATCH)).toBeVisible();

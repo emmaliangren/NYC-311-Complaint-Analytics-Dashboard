@@ -4,8 +4,9 @@ import { useFilters } from "@/context/FilterProvider";
 
 const ActiveFilters = () => {
   const { activeEntries, removeFilter } = useFilters();
+  const mapEntries = activeEntries.filter((e) => e.key !== "agency");
 
-  if (activeEntries.length === 0) {
+  if (mapEntries.length === 0) {
     return (
       <p className="text-center text-[11px] uppercase tracking-wider text-gray-400 dark:text-gray-500 py-2">
         No active filters
@@ -15,7 +16,7 @@ const ActiveFilters = () => {
 
   return (
     <div className="grid grid-cols-1 gap-2">
-      {activeEntries.map(({ key, value }) => (
+      {mapEntries.map(({ key, value }) => (
         <ActiveFilterBadge
           key={key}
           filterKey={key}

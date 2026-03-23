@@ -14,6 +14,7 @@ import theme from "./scripts/theme.ts?raw";
 import type { Route } from "./+types/root";
 import "./styles/index.css";
 import type { ReactNode } from "react";
+import { FilterProvider } from "./context/FilterProvider";
 // eslint-disable-next-line react-refresh/only-export-components
 export const links: Route.LinksFunction = () => [];
 
@@ -42,7 +43,11 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <FilterProvider>
+      <Outlet />
+    </FilterProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
