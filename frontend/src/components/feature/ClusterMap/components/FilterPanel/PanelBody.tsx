@@ -16,7 +16,6 @@ const PanelBody = ({
   onTabChange,
   onHide,
   children,
-  totalCount,
   filteredCount,
   viewportCount,
 }: FilterPanelBodyProps) => {
@@ -75,13 +74,7 @@ const PanelBody = ({
                 className={`transition-transform ${summaryOpen ? "rotate-180" : ""}`}
               />
             </button>
-            {summaryOpen && (
-              <Summary
-                totalCount={totalCount}
-                filteredCount={filteredCount}
-                viewportCount={viewportCount}
-              />
-            )}
+            {summaryOpen && <Summary filteredCount={filteredCount} viewportCount={viewportCount} />}
             <PanelFooter onHide={onHide} />
           </div>
         )}{" "}
@@ -92,16 +85,10 @@ const PanelBody = ({
 
 export default PanelBody;
 
-const Summary = ({ totalCount, filteredCount, viewportCount }: SummaryProps) => {
+const Summary = ({ filteredCount, viewportCount }: SummaryProps) => {
   const { activeEntries } = useFilters();
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <span>Total</span>
-        <span className="font-mono text-gray-700 dark:text-gray-200">
-          {totalCount.toLocaleString()}
-        </span>
-      </div>
       {activeEntries.length > 0 && (
         <div className="flex items-center justify-between text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
           <span>Filtered</span>

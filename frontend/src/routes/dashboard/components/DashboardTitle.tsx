@@ -4,7 +4,7 @@ const DashboardTitle = () => (
       New York City
     </p>
     <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-      311 Complaint Map
+      311 Complaint Dashboard
     </h1>
   </div>
 );

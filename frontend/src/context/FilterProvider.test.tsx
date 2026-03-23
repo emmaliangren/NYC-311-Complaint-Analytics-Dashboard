@@ -1,25 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { FilterProvider, useFilters } from "@/context/FilterProvider";
-import { mock } from "@/mocks/mock";
+import { mock, POINT } from "@/mocks";
+import type { GeoPoint } from "@/types/geopoints";
+import type { ComplaintType, Borough, Status } from "@/types/api";
 
-const basePoint = {
-  uniqueKey: "1",
-  latitude: 40.7,
-  longitude: -74.0,
-  complaintType: "Noise - Residential",
-  borough: "MANHATTAN",
-  status: "Open",
-  createdDate: "2025-06-15",
-};
-
-const FilterConsumer = ({ points }: { points: any[] }) => {
+const FilterConsumer = ({ points }: { points: GeoPoint[] }) => {
   const ctx = useFilters();
   const filtered = ctx.filterPoints(points);
   return <span data-testid="count">{filtered.length}</span>;
 };
 
-const setup = (points: any[] = [basePoint]) => {
+const setup = (points: GeoPoint[] = [POINT]) => {
   let ctxRef: ReturnType<typeof useFilters>;
 
   const Capture = () => {
@@ -41,19 +33,20 @@ const setup = (points: any[] = [basePoint]) => {
 
 describe("FilterProvider", () => {
   beforeEach(() => {
+    localStorage.clear();
     mock.filterOptions.loaded();
   });
 
   describe("filterPoints — complaintType branch", () => {
     it("keeps point when complaintType filter matches", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setComplaintType("Noise - Residential" as any));
+      await act(async () => ctx().setComplaintType("Noise - Residential" as ComplaintType));
       expect(getCount()).toBe(1);
     });
 
     it("removes point when complaintType filter does not match", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setComplaintType("Rodent" as any));
+      await act(async () => ctx().setComplaintType("Rodent" as ComplaintType));
       expect(getCount()).toBe(0);
     });
   });
@@ -61,13 +54,13 @@ describe("FilterProvider", () => {
   describe("filterPoints — borough branch", () => {
     it("keeps point when borough filter matches", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setBorough("MANHATTAN" as any));
+      await act(async () => ctx().setBorough("MANHATTAN" as Borough));
       expect(getCount()).toBe(1);
     });
 
     it("removes point when borough filter does not match", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setBorough("BROOKLYN" as any));
+      await act(async () => ctx().setBorough("BROOKLYN" as Borough));
       expect(getCount()).toBe(0);
     });
   });
@@ -75,13 +68,13 @@ describe("FilterProvider", () => {
   describe("filterPoints — status branch", () => {
     it("keeps point when status filter matches", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setStatus("Open" as any));
+      await act(async () => ctx().setStatus("Open" as Status));
       expect(getCount()).toBe(1);
     });
 
     it("removes point when status filter does not match", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setStatus("Closed" as any));
+      await act(async () => ctx().setStatus("Closed" as Status));
       expect(getCount()).toBe(0);
     });
   });
@@ -116,7 +109,7 @@ describe("FilterProvider", () => {
 
   describe("filterPoints — no active filters", () => {
     it("returns all points when no filter is set", () => {
-      const points = [basePoint, { ...basePoint, uniqueKey: "2" }];
+      const points: GeoPoint[] = [POINT, { ...POINT, uniqueKey: "2" }];
       const { getCount } = setup(points);
       expect(getCount()).toBe(2);
     });
@@ -126,9 +119,9 @@ describe("FilterProvider", () => {
     it("applies all active filters together", async () => {
       const { getCount, ctx } = setup();
       await act(async () => {
-        ctx().setComplaintType("Noise - Residential" as any);
-        ctx().setBorough("MANHATTAN" as any);
-        ctx().setStatus("Open" as any);
+        ctx().setComplaintType("Noise - Residential" as ComplaintType);
+        ctx().setBorough("MANHATTAN" as Borough);
+        ctx().setStatus("Open" as Status);
         ctx().setDateFrom("2025-01-01");
         ctx().setDateTo("2025-12-31");
       });
@@ -138,8 +131,8 @@ describe("FilterProvider", () => {
     it("returns 0 when one filter in a combination does not match", async () => {
       const { getCount, ctx } = setup();
       await act(async () => {
-        ctx().setComplaintType("Noise - Residential" as any);
-        ctx().setBorough("BRONX" as any); // won't match
+        ctx().setComplaintType("Noise - Residential" as ComplaintType);
+        ctx().setBorough("BRONX" as Borough);
       });
       expect(getCount()).toBe(0);
     });
@@ -148,7 +141,7 @@ describe("FilterProvider", () => {
   describe("reset", () => {
     it("clears all filters so filterPoints returns all points", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setBorough("BRONX" as any));
+      await act(async () => ctx().setBorough("BRONX" as Borough));
       expect(getCount()).toBe(0);
       await act(async () => ctx().reset());
       expect(getCount()).toBe(1);
@@ -158,7 +151,7 @@ describe("FilterProvider", () => {
   describe("removeFilter", () => {
     it("removes a single active filter", async () => {
       const { getCount, ctx } = setup();
-      await act(async () => ctx().setBorough("BRONX" as any));
+      await act(async () => ctx().setBorough("BRONX" as Borough));
       expect(getCount()).toBe(0);
       await act(async () => ctx().removeFilter("borough"));
       expect(getCount()).toBe(1);
@@ -173,7 +166,7 @@ describe("FilterProvider", () => {
 
     it("reflects set filters", async () => {
       const { ctx } = setup();
-      await act(async () => ctx().setBorough("MANHATTAN" as any));
+      await act(async () => ctx().setBorough("MANHATTAN" as Borough));
       const entry = ctx().activeEntries.find((e) => e.key === "borough");
       expect(entry?.value).toBe("MANHATTAN");
     });

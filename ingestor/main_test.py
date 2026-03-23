@@ -18,6 +18,7 @@ from main import (
     parse_record,
     run,
     upsert,
+    upsert_agency,
 )
 from test_constants import (
     EXPECTED_BOROUGH,
@@ -28,6 +29,7 @@ from test_constants import (
     EXPECTED_LONGITUDE,
     EXPECTED_STATUS,
     EXPECTED_UNIQUE_KEY,
+    EXPECTED_AGENCY,
     VALID_RECORD,
     INVALID_LONGITUDE,
 )
@@ -111,6 +113,16 @@ class TestParseRecord:
     def test_invalid_coordinates_returns_none(self):
         assert parse_record(make_record(latitude=None)) is None
 
+    def test_agency_is_parsed(self):
+        result = parse_record(make_record())
+        assert result is not None
+        assert result.agency == EXPECTED_AGENCY
+
+    def test_missing_agency_returns_none(self):
+        result = parse_record(make_record(agency=None))
+        assert result is not None
+        assert result.agency is None
+
 
 class TestUpsert:
     def test_filters_invalid_records(self):
@@ -148,6 +160,52 @@ class TestUpsert:
         count = upsert(cursor, [])
         cursor.executemany.assert_not_called()
         assert count == 0
+
+    def test_upsert_agency_called_for_valid_record(self):
+        cursor = MagicMock()
+        with patch("main.upsert_agency", return_value=1) as mock_upsert_agency:
+            upsert(cursor, [make_record()])
+            mock_upsert_agency.assert_called_once()
+
+    def test_upsert_agency_called_with_agency_name(self):
+        cursor = MagicMock()
+        with patch("main.upsert_agency", return_value=1) as mock_upsert_agency:
+            upsert(cursor, [make_record()])
+            mock_upsert_agency.assert_called_once_with(cursor, EXPECTED_AGENCY)
+
+
+class TestUpsertAgency:
+    def test_returns_none_for_null_agency(self):
+        cursor = MagicMock()
+        from main import upsert_agency
+
+        result = upsert_agency(cursor, None)
+        assert result is None
+        cursor.execute.assert_not_called()
+
+    def test_returns_none_for_empty_string(self):
+        cursor = MagicMock()
+        from main import upsert_agency
+
+        result = upsert_agency(cursor, "")
+        assert result is None
+        cursor.execute.assert_not_called()
+
+    def test_returns_agency_id(self):
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (42,)
+        from main import upsert_agency
+
+        result = upsert_agency(cursor, "DOT")
+        assert result == 42
+
+    def test_upserts_agency_name(self):
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (1,)
+        from main import upsert_agency
+
+        upsert_agency(cursor, "DOT")
+        assert cursor.execute.call_count == 2
 
 
 class TestFetch:

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import DateRangeFilter from "./DateRangeFilter";
 import {
   LABEL_FROM,
@@ -20,6 +20,10 @@ const renderFilter = () => {
 };
 
 describe("DateRangeFilter", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("should render both date inputs with labels", () => {
     renderFilter();
     expect(screen.getByLabelText(LABEL_FROM)).toBeInTheDocument();

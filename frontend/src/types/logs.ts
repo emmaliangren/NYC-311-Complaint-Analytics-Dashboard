@@ -1,6 +1,8 @@
+export type DataRefreshStatus = "in progress" | "completed" | "failed" | null;
+
 export interface DataRefresh {
-  refreshCompletedAt: string;
+  refreshCompletedAt: string | null;
   refreshStartedAt: string;
   recordsProcessed: number;
-  status: string;
+  status: DataRefreshStatus;
 }

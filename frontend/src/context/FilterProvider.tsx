@@ -1,18 +1,31 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import type { GeoPoint, FilterState, ActiveFilters, ComplaintType, Borough, Status } from "@/types";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import useFilterOptions from "@/components/feature/ClusterMap/components/CategoryFilter/useFilterOptions";
-import type { GeoPoint } from "@/types/geopoints";
-import type { ComplaintType, Borough, Status } from "@/types/api";
-import type { FilterState, ActiveFilters } from "@/types/ClusterMap";
+import { usePersistedAgency, useResolutionTime } from "@/api/resolutionTime";
+import { usePersistedState } from "@/hooks/usePersistedState";
+import { MOCK_RESOLUTION_TIME } from "@/api/resolutionTime/mock";
+import type { MapFilterKey } from "@/types/ClusterMap";
 
 const FilterContext = createContext<FilterState | null>(null);
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
-  const { options, loading, error } = useFilterOptions();
-  const [complaintType, setComplaintType] = useState<ComplaintType>();
-  const [borough, setBorough] = useState<Borough>();
-  const [status, setStatus] = useState<Status>();
-  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<string | undefined>(undefined);
+  const { options, loading: FilterLoading, error: FilterError } = useFilterOptions();
+  const {
+    data: fetchedData,
+    isLoading: ResolutionLoading,
+    isError: ResolutionError,
+  } = useResolutionTime(undefined);
+
+  const { value: complaintType, setValue: setComplaintType } =
+    usePersistedState<ComplaintType>("filter:complaintType");
+  const { value: borough, setValue: setBorough } = usePersistedState<Borough>("filter:borough");
+  const { value: status, setValue: setStatus } = usePersistedState<Status>("filter:status");
+  const { value: dateFrom, setValue: setDateFrom } = usePersistedState("filter:dateFrom");
+  const { value: dateTo, setValue: setDateTo } = usePersistedState("filter:dateTo");
+  const { agency, setAgency } = usePersistedAgency();
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+
+  const allData = fetchedData.length > 0 ? fetchedData : MOCK_RESOLUTION_TIME;
 
   const reset = () => {
     setComplaintType(undefined);
@@ -20,14 +33,29 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     setStatus(undefined);
     setDateFrom(undefined);
     setDateTo(undefined);
+    setAgency(undefined);
   };
 
+  const isLoading = ResolutionLoading || FilterLoading;
+  const isError = ResolutionError || FilterError;
+
+  const activeAgencies = useMemo(() => new Set(allData.map((d) => d.agency)), [allData]);
+
   const activeEntries = (
-    Object.keys({ complaintType, borough, status, dateFrom, dateTo }) as (keyof ActiveFilters)[]
+    Object.keys({
+      complaintType,
+      borough,
+      status,
+      dateFrom,
+      dateTo,
+    }) as MapFilterKey[]
   )
-    .map((key) => ({ key, value: { complaintType, borough, status, dateFrom, dateTo }[key] }))
+    .map((key) => ({
+      key,
+      value: { complaintType, borough, status, dateFrom, dateTo }[key],
+    }))
     .filter(
-      (e): e is { key: keyof ActiveFilters; value: string } =>
+      (e): e is { key: MapFilterKey; value: string } =>
         typeof e.value === "string" && e.value.length > 0
     );
 
@@ -37,6 +65,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     status: setStatus,
     dateFrom: setDateFrom,
     dateTo: setDateTo,
+    agency: setAgency,
   };
 
   const removeFilter = (key: keyof ActiveFilters) => setters[key](undefined);
@@ -48,6 +77,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       if (status && p.status !== status) return false;
       if (dateFrom && p.createdDate < dateFrom) return false;
       if (dateTo && p.createdDate > dateTo) return false;
+      if (agency && p.agency !== agency) return false;
       return true;
     });
 
@@ -64,19 +94,26 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
         setStatus,
         setDateFrom,
         setDateTo,
+        setAgency,
+        agency,
         reset,
         removeFilter,
+        activeAgencies,
         activeEntries,
+        data: allData,
         options,
-        loading,
-        error,
+        isLoading,
+        isError,
         filterPoints,
+        isWalkthroughOpen,
+        setIsWalkthroughOpen,
       }}
     >
       {children}
     </FilterContext.Provider>
   );
 };
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useFilters = (): FilterState => {
   const c = useContext(FilterContext);

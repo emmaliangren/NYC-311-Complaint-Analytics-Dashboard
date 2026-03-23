@@ -7,3 +7,4 @@ export { default as CornerGlow } from "./CornerGlow";
 export { default as PageContainer } from "./PageContainer";
 export { default as DashboardHeader } from "./DashboardHeader";
 export { default as BackButton } from "./BackButton";
+export { default as DashboardNav } from "./DashboardNav";

@@ -21,6 +21,7 @@ NYC_OPEN_DATA = {
 TABLES = {
     "complaints": "complaints",
     "refresh_log": "data_refresh_log",
+    "agencies": "agencies",
 }
 
 MAX_TIMEOUT = 60

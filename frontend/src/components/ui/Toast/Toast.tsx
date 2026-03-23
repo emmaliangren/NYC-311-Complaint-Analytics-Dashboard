@@ -24,14 +24,14 @@ const variantIcons: Record<ToastVariant, ReactNode> = {
 export default function ToastMessage({
   message,
   variant = "info",
-  visible,
+  isVisible,
   onClose,
   duration,
 }: ToastProps) {
   const [progress, setProgress] = useState(MAX_TOAST_PROGRESS);
 
   useEffect(() => {
-    if (!visible || !duration) return;
+    if (!isVisible || !duration) return;
     setProgress(MAX_TOAST_PROGRESS);
 
     const interval = setInterval(() => {
@@ -43,14 +43,14 @@ export default function ToastMessage({
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [visible, duration, onClose]);
+  }, [isVisible, duration, onClose]);
 
   return (
     <div
       className={clsx(
         "fixed bottom-6 right-6 z-50 flex max-w-sm flex-col rounded border-md shadow-md transition-all duration-300 overflow-hidden",
         variantStyles[variant],
-        visible ? "opacity-100" : "opacity-0 pointer-events-none"
+        isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
       role="alert"
     >

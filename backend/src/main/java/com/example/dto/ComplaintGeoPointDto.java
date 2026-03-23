@@ -7,6 +7,7 @@ public record ComplaintGeoPointDto(
     String complaintType,
     String borough,
     String createdDate,
-    String status) {
+    String status,
+    String agencyName) {
   // no-arg
 }

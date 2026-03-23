@@ -1,3 +1,4 @@
+import type { ActiveTab, ClusterMapProps } from "@/types/ClusterMap";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { MapController } from "./lib/MapController";
 import {
@@ -14,11 +15,10 @@ import { FilterPanel } from "./components/FilterPanel";
 import { useFilters } from "@/context/FilterProvider";
 import DateRangeFilter from "@/components/feature/ClusterMap/components/DateRangeFilter";
 import { CategoryFilter } from "./components/CategoryFilter";
-import type { ActiveTab, ClusterMapProps } from "@/types/ClusterMap";
-import ToastMessage from "@/components/ui/Popup";
+import ToastMessage from "@/components/ui/Toast";
 import SpotlightTip from "./components/Spotlight";
 
-const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterMapProps) => {
+const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: ClusterMapProps) => {
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<MapController | null>(null);
@@ -40,7 +40,6 @@ const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterM
   const [filterActiveTab, setFilterActiveTab] = useState<ActiveTab>("filters");
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [isAtDefault, setIsAtDefault] = useState(true);
-  const [totalCount, setTotalCount] = useState(0);
   const [filteredCount, setFilteredCount] = useState(0);
   const [viewportCount, setViewportCount] = useState(0);
   const [showNoResults, setShowNoResults] = useState(false);
@@ -86,8 +85,7 @@ const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterM
       onLoadingChange: handleLoadingChange,
       onEmptyChange: handleEmptyChange,
       onZoomChange: setZoom,
-      onPointsChange: (total, filtered) => {
-        setTotalCount(total);
+      onPointsChange: (filtered) => {
         setFilteredCount(filtered);
       },
       onViewportCountChange: setViewportCount,
@@ -130,16 +128,16 @@ const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterM
   return (
     <MapWrapper className={className}>
       <MapContainer ref={containerRef} />
-      {walkthroughOpen && <div className="absolute inset-0 z-[9997]" />}
+      {isWalkthroughOpen && <div className="absolute inset-0 z-[9997]" />}
       <EdgeFade />
-      <LoadingOverlay visible={loading} />
-      <LoadingBar visible={softLoading} />
+      <LoadingOverlay isVisible={loading} />
+      <LoadingBar isVisible={softLoading} />
       {showEmpty && filters.activeEntries.length === 0 && (
         <EmptyState onLoadMock={hasEverHadDataRef.current ? undefined : handleLoadMock} />
       )}
       <ToastMessage
         variant="info"
-        visible={filteredCount === 0 && showNoResults}
+        isVisible={filteredCount === 0 && showNoResults && !loading}
         onClose={() => setShowNoResults(false)}
         message={TOAST_MESSAGE}
         duration={TOAST_TIMER}
@@ -148,21 +146,20 @@ const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterM
         zoomIn={handleZoomIn}
         zoomOut={handleZoomOut}
         resetView={handleReset}
-        disableZoomIn={zoom >= MAX_ZOOM || walkthroughOpen}
-        disableZoomOut={zoom <= MIN_ZOOM || walkthroughOpen}
-        disableReset={isAtDefault || walkthroughOpen}
+        disableZoomIn={zoom >= MAX_ZOOM || isWalkthroughOpen}
+        disableZoomOut={zoom <= MIN_ZOOM || isWalkthroughOpen}
+        disableReset={isAtDefault || isWalkthroughOpen}
       />
       <FilterPanel
         ref={filterPanelRef}
         isExpanded={filterOpen}
         onExpand={() => setFilterOpen(true)}
         onCollapse={() => {
-          if (!walkthroughOpen) setFilterOpen(false);
+          if (!isWalkthroughOpen) setFilterOpen(false);
         }}
-        spotlight={walkthroughOpen}
+        spotlight={isWalkthroughOpen}
         activeTab={filterActiveTab}
         onTabChange={setFilterActiveTab}
-        totalCount={totalCount}
         filteredCount={filteredCount}
         viewportCount={viewportCount}
       >
@@ -177,7 +174,7 @@ const ClusterMap = ({ className, walkthroughOpen, setWalkthroughOpen }: ClusterM
       <SpotlightTip
         id="filter-panel-v1"
         targetRef={filterPanelRef}
-        onOpenChange={setWalkthroughOpen}
+        onOpenChange={setIsWalkthroughOpen}
         steps={[
           {
             title: "Open the filter panel",

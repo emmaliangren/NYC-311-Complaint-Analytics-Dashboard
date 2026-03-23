@@ -23,7 +23,7 @@ class RefreshLogControllerTest {
 
   @MockBean private DataRefreshLogRepository dataRefreshLogRepository;
 
-  // --- Success cases ---
+  // Success cases
 
   @Test
   void getLatest_returnsDataWhenRefreshExists() throws Exception {
@@ -41,7 +41,7 @@ class RefreshLogControllerTest {
         .andExpect(jsonPath("$.refreshCompletedAt").isNotEmpty());
   }
 
-  // --- Error / edge cases ---
+  // Error / edge cases
 
   @Test
   void getLatest_returns404WhenNoRefreshExists() throws Exception {

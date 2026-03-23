@@ -1,5 +1,4 @@
 import type L from "leaflet";
-
 import type { Status } from "@/types/api";
 import type { ClusterTier, MarkerStrokeStyle, StatusFill } from "./types";
 
@@ -65,3 +64,26 @@ export const MARKER_STROKE: Record<"normal" | "hovered", MarkerStrokeStyle> = {
   normal: { colour: "rgba(255,255,255,0.9)", width: "1.5", opacity: 0.9 },
   hovered: { colour: "white", width: "2", opacity: 1 },
 };
+
+export const CLUSTER_ICON_CLASS = "cluster-icon-circle";
+
+export const COUNTS_INITIAL = [100, 50, 10];
+export const COUNT_POST_RESET = 999;
+
+export const COUNTS_FEWER_THAN_THREE = [10, 5];
+export const COUNT_TOP_OF_TWO = COUNTS_FEWER_THAN_THREE[0];
+
+export const COUNTS_EXACTLY_THREE = [30, 20, 10];
+export const COUNT_MIDDLE_OF_THREE = COUNTS_EXACTLY_THREE[1];
+
+export const COUNTS_FIVE = [100, 80, 60, 40, 20];
+export const COUNT_FOURTH_OF_FIVE = COUNTS_FIVE[3];
+
+export const COUNT_SMALL = 5;
+export const COUNT_K_FORMAT = 1500;
+export const EXPECTED_K_LABEL = "1.5k";
+
+export const STATUS_UNKNOWN = "default";
+
+export const CUSTOM_OPACITY = "0.5";
+export const CUSTOM_TRANSITION = "opacity 0.3s linear";

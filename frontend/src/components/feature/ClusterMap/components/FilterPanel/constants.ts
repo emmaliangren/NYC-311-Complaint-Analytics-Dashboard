@@ -8,6 +8,7 @@ export const FILTER_LABELS: Record<keyof ActiveFilters, string> = {
   status: "Status",
   dateFrom: "From",
   dateTo: "To",
+  agency: "NYPD",
 };
 
 export const FILTER_VALUE_KEYS = Object.keys(FILTER_LABELS) as (keyof ActiveFilters)[];
@@ -18,4 +19,5 @@ export const SETTERS = {
   status: "setStatus",
   dateFrom: "setDateFrom",
   dateTo: "setDateTo",
+  agency: "setAgency",
 } as const;

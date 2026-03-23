@@ -1,96 +1,29 @@
-import type { Map } from "leaflet";
 import type { ComplaintType, Borough, Status } from "./api";
 import type { GeoPoint } from "./geopoints";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
-import type { SummaryProps } from "@/components/feature/ClusterMap/components/FilterPanel/types";
+import type { Dispatch, SetStateAction } from "react";
+import type { Agency, ResolutionTimeDto } from "./agency";
 
 export interface ClusterMapProps {
   className?: string;
-  walkthroughOpen: boolean;
-  setWalkthroughOpen: Dispatch<SetStateAction<boolean>>;
+  isWalkthroughOpen: boolean;
+  setIsWalkthroughOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface FilterOptionsResponse {
-  complaintTypes: ComplaintType[];
   boroughs: Borough[];
+  complaintTypes: ComplaintType[];
   statuses: Status[];
+  agency: Agency[];
 }
 
-export interface ZoomPanelProps {
-  zoomIn: () => Map | undefined;
-  zoomOut: () => Map | undefined;
-  resetView: () => void;
-  disableZoomIn: boolean;
-  disableZoomOut: boolean;
-}
-
-export interface ActiveFilterBadgeProps {
-  filterKey: string;
-  label: string;
-  onRemove: (filterKey: string) => void;
-}
-
-export interface FilterResetButtonProps {
-  onClick: () => void;
-}
-
-export interface ActiveFilter {
-  key: string;
-  label: string;
-}
-
-export interface QueryFilters {
-  borough: string;
-  complaintType: string;
-  status: string;
-  dateFrom: string;
-  dateTo: string;
-}
-
-export interface QueryFilterOptions {
-  boroughs: string[];
-  complaintTypes: string[];
-  statuses: string[];
-}
-
+export type MapFilterKey = keyof Omit<ActiveFilters, "agency">;
 export type ActiveTab = "filters" | "active";
-
-export interface FilterPanelProps extends SummaryProps {
-  children: ReactNode;
-  isExpanded?: boolean;
-  onExpand?: () => void;
-  onCollapse?: () => void;
-  spotlight?: boolean;
-  activeTab?: ActiveTab;
-  onTabChange?: (tab: ActiveTab) => void;
-}
-
-export interface TooltipProps {
-  label: string;
-}
-
-export interface MarkerDetailPanelProps {
-  point: GeoPoint;
-  onClose: () => void;
-}
-
-export interface EmptyStateProps {
-  onLoadMock: () => void;
-}
-
-export interface LoadingOverlayProps {
-  visible: boolean;
-  label?: string;
-}
-
-export interface EdgeFadeProps {
-  colour: string;
-}
 
 export interface ActiveFilters {
   complaintType: ComplaintType | undefined;
   borough: Borough | undefined;
   status: Status | undefined;
+  agency: Agency | undefined;
   dateFrom: string | undefined;
   dateTo: string | undefined;
 }
@@ -101,11 +34,16 @@ export interface FilterState extends ActiveFilters {
   setStatus: (value: Status | undefined) => void;
   setDateFrom: (value: string | undefined) => void;
   setDateTo: (value: string | undefined) => void;
+  setAgency: (value: Agency | undefined) => void;
   reset: () => void;
   removeFilter: (key: keyof ActiveFilters) => void;
   activeEntries: { key: keyof ActiveFilters; value: string }[];
+  activeAgencies: Set<Agency>;
   options: FilterOptionsResponse;
-  loading: boolean;
-  error: boolean;
+  isLoading: boolean;
+  isError: boolean;
   filterPoints: (points: GeoPoint[]) => GeoPoint[];
+  data: ResolutionTimeDto[];
+  isWalkthroughOpen: boolean;
+  setIsWalkthroughOpen: Dispatch<SetStateAction<boolean>>;
 }

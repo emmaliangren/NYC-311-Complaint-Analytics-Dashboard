@@ -1,12 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { PopupFactory } from "./PopupFactory";
-import { POINT } from "../constants";
+import { POINT } from "@/mocks";
 import { STATUS_FILLS } from "./constants";
-import type { Status } from "@/types/api";
-
-const STATUS_COLOUR_CASES = Object.entries(STATUS_FILLS)
-  .filter(([key]) => key !== "default")
-  .map(([status, fill]) => [status as Status, fill.colour] as const);
+import { STATUS_COLOUR_CASES } from "./utils";
 
 describe("PopupFactory", () => {
   let factory: PopupFactory;

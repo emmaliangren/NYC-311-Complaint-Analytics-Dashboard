@@ -1,3 +1,5 @@
+import type { JsonBodyType } from "msw";
+
 export type Status =
   | "Open"
   | "Closed"
@@ -51,3 +53,24 @@ export type HealthCheck = {
   status: ServiceStatus;
   uptime?: number;
 };
+
+export interface DomainFixtures<T extends JsonBodyType> {
+  ok: T;
+  empty: T;
+}
+
+export interface BoroughCount {
+  borough: string;
+  count: number;
+}
+
+export interface AgencyCount {
+  agency: string;
+  count: number;
+}
+
+export interface Summary {
+  totalComplaints: number;
+  complaintsByBorough: BoroughCount[];
+  complaintsByAgency: AgencyCount[];
+}

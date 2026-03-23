@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { hidePaneImmediately, fadePaneIn, chunkAnimationFrame } from "./utils";
-import { PANE_OPACITY_HIDDEN, PANE_OPACITY_VISIBLE, PANE_TRANSITION_EASE } from "./constants";
-
-const CUSTOM_OPACITY = "0.5";
-const CUSTOM_TRANSITION = "opacity 0.3s linear";
+import {
+  CUSTOM_OPACITY,
+  CUSTOM_TRANSITION,
+  PANE_OPACITY_HIDDEN,
+  PANE_OPACITY_VISIBLE,
+  PANE_TRANSITION_EASE,
+} from "./constants";
 
 describe("hidePaneImmediately", () => {
   it("sets opacity to hidden when pane is provided", () => {

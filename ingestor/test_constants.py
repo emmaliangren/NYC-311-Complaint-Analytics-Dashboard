@@ -9,6 +9,7 @@ VALID_RECORD = {
     "status": "Closed",
     "latitude": "40.727",
     "longitude": "-73.715",
+    "agency": "DOT",
 }
 
 EXPECTED_UNIQUE_KEY = VALID_RECORD["unique_key"]
@@ -19,4 +20,5 @@ EXPECTED_LATITUDE = float(VALID_RECORD["latitude"])
 EXPECTED_LONGITUDE = float(VALID_RECORD["longitude"])
 EXPECTED_CREATED_DATE = datetime(2026, 1, 1, 8, 0, 0)
 EXPECTED_CLOSED_DATE = datetime(2026, 1, 4, 8, 0, 0)
+EXPECTED_AGENCY = VALID_RECORD["agency"]
 INVALID_LONGITUDE = float(VALID_RECORD["longitude"]) + 100

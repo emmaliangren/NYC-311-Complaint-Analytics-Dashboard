@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.entity.Agency;
 import com.example.entity.Complaint;
 import com.example.entity.DataRefreshLog;
 import com.example.entity.RefreshStatus;
@@ -17,6 +18,18 @@ class TestFixtures {
       String borough,
       String date,
       String status) {
+    return complaint(uniqueKey, lat, lng, type, borough, date, status, null);
+  }
+
+  static Complaint complaint(
+      String uniqueKey,
+      double lat,
+      double lng,
+      String type,
+      String borough,
+      String date,
+      String status,
+      Agency agency) {
     Complaint c = new Complaint();
     setField(c, "uniqueKey", uniqueKey);
     setField(c, "latitude", lat);
@@ -25,6 +38,7 @@ class TestFixtures {
     setField(c, "borough", borough);
     setField(c, "createdDate", LocalDateTime.parse(date + "T00:00:00"));
     setField(c, "status", status);
+    c.setAgency(agency);
     return c;
   }
 
@@ -38,6 +52,12 @@ class TestFixtures {
     setField(c, "borough", borough);
     setField(c, "status", status);
     return c;
+  }
+
+  static Agency agency(String name) {
+    Agency a = new Agency();
+    setField(a, "name", name);
+    return a;
   }
 
   static DataRefreshLog dataRefresh(int recordsProcessed, RefreshStatus status) {

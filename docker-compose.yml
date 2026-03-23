@@ -29,6 +29,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - ./backend:/app
+      - backend_gradle_cache:/app/.gradle
     command: ./gradlew bootRun --no-daemon
     depends_on:
       db:
@@ -84,3 +85,4 @@ services:
 
 volumes:
   dev_data:
+  backend_gradle_cache:

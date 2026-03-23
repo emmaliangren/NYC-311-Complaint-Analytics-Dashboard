@@ -1,6 +1,4 @@
 import type L from "leaflet";
-import type { Status } from "@/types/api";
-import type { GeoPoint } from "@/types/geopoints";
 
 export const NYC_CENTER: L.LatLngExpression = [40.7128, -74.006];
 export const NYC_BOUNDS: L.LatLngBoundsExpression = [
@@ -72,46 +70,11 @@ export const THEME_MUTATION_ATTR = "class";
 export const ONE_HOUR_MS = 3_600_000;
 export const TEST_WAITFOR_TIMEOUT_MS = 3_000;
 
-export const STATUSES: Status[] = [
-  "Open",
-  "In Progress",
-  "Assigned",
-  "Started",
-  "Closed",
-  "Pending",
-  "default",
-] as const;
+export const CONTAINER_WIDTH = "800px";
+export const CONTAINER_HEIGHT = "600px";
 
-// Testing
-
-export const POINTS: GeoPoint[] = [
-  {
-    uniqueKey: "1",
-    latitude: 40.71,
-    longitude: -74.0,
-    complaintType: "Noise - Residential",
-    borough: "Manhattan",
-    createdDate: "2025-03-01",
-    status: "Open",
-  },
-  {
-    uniqueKey: "null-lat",
-    latitude: null as unknown as number,
-    longitude: -74.0,
-    complaintType: "Homeless Encampment",
-    borough: "Manhattan",
-    createdDate: "2025-03-01",
-    status: "Open",
-  },
-  {
-    uniqueKey: "null-lng",
-    latitude: 40.71,
-    longitude: null as unknown as number,
-    complaintType: "Heat/Hot Water",
-    borough: "Manhattan",
-    createdDate: "2025-03-01",
-    status: "Open",
-  },
-];
-
-export const POINT = POINTS[0];
+export const DEBOUNCE_MS = 100;
+export const DEBOUNCE_HALF_MS = DEBOUNCE_MS / 2;
+export const DEBOUNCE_JUST_UNDER_MS = DEBOUNCE_MS - 1;
+export const DEBOUNCE_OVER_MS = DEBOUNCE_MS * 2;
+export const INTERVAL_ADVANCE_MS = 10_000;

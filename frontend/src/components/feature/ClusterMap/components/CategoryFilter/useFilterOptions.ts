@@ -17,6 +17,7 @@ const useFilterOptions = (): UseFilterOptionsResult => {
           const isEmpty =
             data.complaintTypes.length === 0 &&
             data.boroughs.length === 0 &&
+            data.agency.length === 0 &&
             data.statuses.length === 0;
           setOptions(isEmpty ? FALLBACK_OPTIONS : data);
           setError(false);

@@ -47,7 +47,6 @@ const defaultProps = {
   onCollapse: vi.fn(),
   activeTab: "filters" as const,
   onTabChange: vi.fn(),
-  totalCount: 0,
   filteredCount: 0,
   viewportCount: 0,
 };

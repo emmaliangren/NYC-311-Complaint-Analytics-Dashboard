@@ -1,4 +1,5 @@
 import type { Borough, ComplaintType, Status } from "@/types/api";
+
 import type { FeatureGroup, LatLng, LeafletMouseEvent } from "leaflet";
 
 export interface MapControllerCallbacks {
@@ -44,4 +45,4 @@ export type TimeoutTimer = ReturnType<typeof setTimeout>;
 
 export type LeafletContainer = HTMLElement & { _leaflet_id?: number };
 
-export type AnyVoidFn = (...args: any[]) => void;
+export type AnyVoidFn = (...args: unknown[]) => void;

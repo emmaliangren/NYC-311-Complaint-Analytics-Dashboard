@@ -1,11 +1,11 @@
+import type { ComplaintType } from "@/types/api";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import Dropdown from "./Dropdown";
 import { TEST_DEFAULT, TEST_ID, TEST_LABEL, TEST_OPTIONS } from "./constants";
-import FilterDropdown from "./FilterDropdown";
-import type { ComplaintType } from "@/types/api";
 
-describe("FilterDropdown", () => {
+describe("Dropdown", () => {
   let onChange: Mock<(value: ComplaintType | undefined) => void>;
 
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe("FilterDropdown", () => {
 
   it("disables the button while loading", () => {
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -33,7 +33,7 @@ describe("FilterDropdown", () => {
 
   it("shows loading text while fetching", () => {
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -50,7 +50,7 @@ describe("FilterDropdown", () => {
   it("renders all options plus a default clear option when opened", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -74,7 +74,7 @@ describe("FilterDropdown", () => {
 
   it("does not show options when closed", () => {
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -91,7 +91,7 @@ describe("FilterDropdown", () => {
   it("calls onChange with the selected value", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -110,7 +110,7 @@ describe("FilterDropdown", () => {
   it("calls onChange with undefined when selecting the default option", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value="Noise - Residential"
@@ -130,7 +130,7 @@ describe("FilterDropdown", () => {
   it("closes the dropdown after selecting an option", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -151,7 +151,7 @@ describe("FilterDropdown", () => {
   it("closes the dropdown on Escape", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -171,7 +171,7 @@ describe("FilterDropdown", () => {
 
   it("keeps the button enabled on error with fallback options", () => {
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -188,7 +188,7 @@ describe("FilterDropdown", () => {
   it("renders fallback options on error", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -207,7 +207,7 @@ describe("FilterDropdown", () => {
 
   // it("shows a warning message on error", () => {
   //   render(
-  //     <FilterDropdown
+  //     <Dropdown
   //       id={TEST_ID}
   //       label={TEST_LABEL}
   //       value={undefined}
@@ -223,7 +223,7 @@ describe("FilterDropdown", () => {
 
   it("has a label associated with the trigger", () => {
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}
@@ -242,7 +242,7 @@ describe("FilterDropdown", () => {
   it("navigates options with arrow keys", async () => {
     const user = userEvent.setup();
     render(
-      <FilterDropdown
+      <Dropdown
         id={TEST_ID}
         label={TEST_LABEL}
         value={undefined}

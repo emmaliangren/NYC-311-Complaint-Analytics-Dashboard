@@ -2,7 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import useFilterOptions from "./useFilterOptions";
 import { mock } from "@/mocks/mock";
-import { FIXTURES as F } from "@/mocks/constants";
+import { FIXTURES as F } from "@/mocks";
 import { FALLBACK_OPTIONS } from "./constants";
 
 describe("useFilterOptions", () => {

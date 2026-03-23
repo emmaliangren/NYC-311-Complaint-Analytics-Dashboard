@@ -1,5 +1,9 @@
-const LoadingBar = ({ visible }: { visible: boolean }) => {
-  if (!visible) return null;
+interface LoadingBarProps {
+  isVisible: boolean;
+}
+
+const LoadingBar = ({ isVisible }: LoadingBarProps) => {
+  if (!isVisible) return null;
   return (
     <div className="absolute top-0 left-0 right-0 z-[1000] h-[2px] bg-blue-500/30 overflow-hidden">
       <div
