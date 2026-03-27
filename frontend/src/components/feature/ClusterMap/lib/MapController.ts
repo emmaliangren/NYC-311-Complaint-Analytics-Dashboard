@@ -340,6 +340,30 @@ export class MapController {
     this.cluster.refreshClusters();
   }
 
+  private finishLoading(): void {
+    const elapsed = Date.now() - this.loadStartedAt;
+    setTimeout(() => this.callbacks.onLoadingChange(false), Math.max(0, MIN_LOAD_MS - elapsed));
+  }
+
+  private async renderLoadedPoints(raw: GeoPoint[], isInitialLoad: boolean): Promise<void> {
+    const points = this.applyClientFilters(raw);
+    this.callbacks.onPointsChange?.(this.totalComplaintCount, points.length);
+
+    if (!this.cluster || !this.map) {
+      this.callbacks.onLoadingChange(false);
+      return;
+    }
+
+    const isEmpty = isInitialLoad
+      ? points.length === 0
+      : points.length === 0 && !this.dataService.getUseMock();
+
+    this.callbacks.onEmptyChange(isEmpty);
+    await this.markerManager.buildMarkers(points, this.cluster, this.map, this.clusterPane);
+    this.emitViewportCount();
+    this.finishLoading();
+  }
+
   private async initialLoad(): Promise<void> {
     this.loadStartedAt = Date.now();
 
@@ -357,19 +381,10 @@ export class MapController {
       return;
     }
 
-    const points = this.applyClientFilters(raw);
     const hasFilters = Object.values(this.filters).some(Boolean);
     if (!hasFilters) this.totalComplaintCount = raw.length;
-    this.callbacks.onPointsChange?.(this.totalComplaintCount, points.length);
-    if (!this.cluster || !this.map) {
-      this.callbacks.onLoadingChange(false);
-      return;
-    }
-    this.callbacks.onEmptyChange(points.length === 0);
-    await this.markerManager.buildMarkers(points, this.cluster, this.map, this.clusterPane);
-    this.emitViewportCount();
-    const elapsed = Date.now() - this.loadStartedAt;
-    setTimeout(() => this.callbacks.onLoadingChange(false), Math.max(0, MIN_LOAD_MS - elapsed));
+
+    await this.renderLoadedPoints(raw, true);
   }
 
   private async loadPoints(): Promise<void> {
@@ -377,19 +392,7 @@ export class MapController {
     const raw = await this.dataService.fetchPoints(this.filters);
     if (raw === null) return;
 
-    const points = this.applyClientFilters(raw);
-    this.callbacks.onPointsChange?.(this.totalComplaintCount, points.length);
-
-    if (!this.cluster || !this.map) {
-      this.callbacks.onLoadingChange(false);
-      return;
-    }
-
-    this.callbacks.onEmptyChange(points.length === 0 && !this.dataService.getUseMock());
-    await this.markerManager.buildMarkers(points, this.cluster, this.map, this.clusterPane);
-    this.emitViewportCount();
-    const elapsed = Date.now() - this.loadStartedAt;
-    setTimeout(() => this.callbacks.onLoadingChange(false), Math.max(0, MIN_LOAD_MS - elapsed));
+    await this.renderLoadedPoints(raw, false);
   }
 
   static debounce<T extends AnyVoidFn>(fn: T, ms: number): DebouncedFn<T> {
