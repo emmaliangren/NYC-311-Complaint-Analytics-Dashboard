@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS complaints (
     INDEX idx_borough (borough),
     INDEX idx_created_date (created_date),
     INDEX idx_agency_id (agency_id),
+    INDEX idx_complaint_type_created_date (complaint_type, created_date),
     FOREIGN KEY (agency_id) REFERENCES agencies(id)
 );
 

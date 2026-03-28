@@ -7,6 +7,7 @@ export const ENDPOINTS = {
   lastRefresh: "/api/refreshlogs/latest",
   resolutionTime: "/api/complaints/resolution-time",
   summary: "/api/stats/summary",
+  volumeByType: "/api/complaints/volume-by-type",
 } as const;
 
 export const TOTAL_MOCK_POINTS = 1800;

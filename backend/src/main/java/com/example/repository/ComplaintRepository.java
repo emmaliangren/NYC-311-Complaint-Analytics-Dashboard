@@ -65,6 +65,43 @@ public interface ComplaintRepository
       nativeQuery = true)
   List<Object[]> findResolutionMinutesByAgencyName(@Param("agency") String agency);
 
+  /**
+   * Returns complaint volume grouped by complaint type and month for the most recent 12 months.
+   * Result rows: [period (String, YYYY-MM), complaintType (String), count (Long)]
+   */
+  @Query(
+      value =
+          """
+          SELECT DATE_FORMAT(c.created_date, '%Y-%m') AS period,
+                 c.complaint_type,
+                 COUNT(*) AS cnt
+          FROM complaints c
+          WHERE c.created_date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH)
+          GROUP BY period, c.complaint_type
+          ORDER BY period, c.complaint_type
+          """,
+      nativeQuery = true)
+  List<Object[]> findComplaintVolumeByType();
+
+  /**
+   * Returns complaint volume for a single complaint type grouped by month for the most recent 12
+   * months. Result rows: [period (String, YYYY-MM), complaintType (String), count (Long)]
+   */
+  @Query(
+      value =
+          """
+          SELECT DATE_FORMAT(c.created_date, '%Y-%m') AS period,
+                 c.complaint_type,
+                 COUNT(*) AS cnt
+          FROM complaints c
+          WHERE c.created_date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH)
+            AND c.complaint_type = :complaintType
+          GROUP BY period, c.complaint_type
+          ORDER BY period
+          """,
+      nativeQuery = true)
+  List<Object[]> findComplaintVolumeByTypeName(@Param("complaintType") String complaintType);
+
   @Query("SELECT COUNT(c) FROM Complaint c")
   long countAllComplaints();
 
@@ -74,3 +111,4 @@ public interface ComplaintRepository
   @Query("SELECT a.name, COUNT(c) FROM Complaint c JOIN c.agency a GROUP BY a.name ORDER BY a.name")
   List<Object[]> countComplaintsByAgency();
 }
+

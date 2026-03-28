@@ -8,6 +8,7 @@ import type { FilterOptionsResponse } from "@/types/ClusterMap";
 import type { ResolutionTimeDto } from "@/types/agency";
 import type { GeoPoint } from "@/types/geopoints";
 import type { DataRefresh } from "@/types/logs";
+import type { ComplaintVolumeDto } from "@/hooks/types";
 
 const domainMock = <T extends JsonBodyType>(endpoint: string, fixtures: DomainFixtures<T>) => ({
   loaded: (data: T = fixtures.ok) => server.use(http.get(endpoint, () => HttpResponse.json(data))),
@@ -30,4 +31,5 @@ export const mock = {
   lastRefresh: domainMock<DataRefresh | null>(E.lastRefresh, F.lastRefresh),
   filterOptions: domainMock<FilterOptionsResponse>(E.filterOptions, F.filterOptions),
   resolutionTime: domainMock<ResolutionTimeDto[]>(E.resolutionTime, F.resolutionTime),
+  complaintVolume: domainMock<ComplaintVolumeDto[]>(E.volumeByType, F.complaintVolume),
 };

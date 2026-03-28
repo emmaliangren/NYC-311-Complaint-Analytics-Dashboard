@@ -11,6 +11,7 @@ const renderDashboardNav = (initialEntry: string) =>
         <Route path="/dashboard" element={<DashboardNav />}>
           <Route path="map" element={<DashboardNav />} />
           <Route path="trendchart" element={<DashboardNav />} />
+          <Route path="timechart" element={<DashboardNav />} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -23,6 +24,7 @@ describe("dashboard nav", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Map" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Resolution Times" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Complaint Volumes" })).toBeInTheDocument();
   });
 
   it("indicates map as active on /dashboard/map", () => {
@@ -38,6 +40,16 @@ describe("dashboard nav", () => {
     renderDashboardNav("/dashboard/trendchart");
 
     expect(screen.getByRole("link", { name: "Resolution Times" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("link", { name: "Map" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("indicates resolution times as active on /dashboard/timechart", () => {
+    renderDashboardNav("/dashboard/timechart");
+
+    expect(screen.getByRole("link", { name: "Complaint Volumes" })).toHaveAttribute(
       "aria-current",
       "page"
     );
