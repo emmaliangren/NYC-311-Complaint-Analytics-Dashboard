@@ -7,6 +7,7 @@ export default [
       index("routes/dashboard/dashboard.tsx"),
       route("map", "routes/dashboard/dashboard-map.tsx"),
       route("trendchart", "routes/dashboard/dashboard-trendchart.tsx"),
+      route("timechart", "routes/dashboard/dashboard-timechart.tsx"),
     ]),
   ]),
   route("*", "routes/not-found.tsx"),

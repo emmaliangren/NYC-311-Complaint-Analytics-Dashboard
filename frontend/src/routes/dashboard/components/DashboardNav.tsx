@@ -4,6 +4,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", end: true },
   { to: "/dashboard/map", label: "Map" },
   { to: "/dashboard/trendchart", label: "Resolution Times" },
+  { to: "/dashboard/timechart", label: "Complaint Volumes" },
 ];
 
 const DashboardNav = () => (

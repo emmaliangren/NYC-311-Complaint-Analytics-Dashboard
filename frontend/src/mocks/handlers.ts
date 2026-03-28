@@ -8,4 +8,5 @@ export const handlers = [
   http.get(E.lastRefresh, () => HttpResponse.json(F.lastRefresh.ok)),
   http.get(E.filterOptions, () => HttpResponse.json(F.filterOptions.ok)),
   http.get(E.resolutionTime, () => HttpResponse.json(F.resolutionTime.ok)),
+  http.get(E.volumeByType, () => HttpResponse.json(F.complaintVolume.ok)),
 ];
