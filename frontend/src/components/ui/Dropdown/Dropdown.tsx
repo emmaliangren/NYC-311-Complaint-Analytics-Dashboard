@@ -5,6 +5,9 @@ import DropdownTrigger from "./DropdownTrigger";
 import DropdownList from "./DropdownList";
 import DropdownLabel from "./DropdownLabel";
 
+/**
+ * Main Dropdown component that coordinates state (open/focus) with UI sub-components.
+ */
 const Dropdown = <T extends FilterValue>({
   id,
   label,
@@ -16,6 +19,7 @@ const Dropdown = <T extends FilterValue>({
   defaultLabel = "All",
 }: DropdownProps<T>) => {
   const safeOptions = options ?? [];
+  // Custom hook managing keyboard navigation and selection logic
   const { open, focusIndex, close, select, toggle, handleKeyDown } = useDropdown({
     options: safeOptions,
     onChange,
@@ -34,7 +38,8 @@ const Dropdown = <T extends FilterValue>({
         onToggle={toggle}
         onKeyDown={handleKeyDown}
       />
-      {open && (
+
+      {open && ( //Render list and handle focus based on current hook state
         <DropdownList
           id={id}
           options={safeOptions}

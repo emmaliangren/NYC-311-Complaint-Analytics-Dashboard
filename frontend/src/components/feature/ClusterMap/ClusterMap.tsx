@@ -21,20 +21,29 @@ import SpotlightTip from "./components/Spotlight";
 const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: ClusterMapProps) => {
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // holds the MapController instance — kept in a ref so it survives re-renders
   const controllerRef = useRef<MapController | null>(null);
 
+  // tracks whether a reload is in progress, used to
+  // suppress the empty state flash while markers are being replaced
   const isReloadingRef = useRef(false);
+  // once we've had real data, we hide the "load mock" button on the empty state
   const hasEverHadDataRef = useRef(false);
 
+  // refs used as stable callbacks passed into MapController so it always
+  // reads the latest value without needing to recreate the controller
   const isInitialLoadRef = useRef(true);
   const colourByStatusRef = useRef(true);
   const panOnClusterRef = useRef(true);
   const panOnMarkerRef = useRef(true);
 
+  // full-screen overlay shown only on the very first load
   const [loading, setLoading] = useState(true);
+  // thin loading bar shown on subsequent reloads/filter changes
   const [softLoading, setSoftLoading] = useState(false);
 
   const [isEmpty, setIsEmpty] = useState(false);
+  // delayed version of isEmpty — adds a small buffer to avoid flashing on fast loads
   const [showEmpty, setShowEmpty] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterActiveTab, setFilterActiveTab] = useState<ActiveTab>("filters");
@@ -46,12 +55,14 @@ const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: Clus
 
   const filters = useFilters();
 
+  // show the "no results" toast whenever filters are active but nothing matched
   useEffect(() => {
     if (filteredCount === 0 && filters.activeEntries.length > 0) {
       setShowNoResults(true);
     }
   }, [filteredCount, filters.activeEntries.length]);
 
+  // delay showing the empty state slightly so it doesn't flash during fast reloads
   useEffect(() => {
     if (!isEmpty || softLoading || loading) {
       setShowEmpty(false);
@@ -61,12 +72,14 @@ const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: Clus
     return () => clearTimeout(timer);
   }, [isEmpty, softLoading, loading]);
 
+  // suppress empty state during reloads; track whether we've had data at least once
   const handleEmptyChange = useCallback((empty: boolean) => {
     if (empty && isReloadingRef.current) return;
     if (!empty) hasEverHadDataRef.current = true;
     setIsEmpty(empty);
   }, []);
 
+  // first load drives the full-screen overlay; subsequent loads use the soft loading bar
   const handleLoadingChange = useCallback((isLoading: boolean) => {
     if (isInitialLoadRef.current) {
       setLoading(isLoading);
@@ -78,6 +91,7 @@ const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: Clus
     }
   }, []);
 
+  // mount the MapController once and clean it up on unmount
   useEffect(() => {
     const el = containerRef.current;
     if (!el || controllerRef.current) return;
@@ -102,6 +116,7 @@ const ClusterMap = ({ className, isWalkthroughOpen, setIsWalkthroughOpen }: Clus
     };
   }, [handleEmptyChange, handleLoadingChange]);
 
+  // push filter changes into the controller whenever the context updates
   useEffect(() => {
     controllerRef.current?.applyFilters({
       borough: filters.borough,

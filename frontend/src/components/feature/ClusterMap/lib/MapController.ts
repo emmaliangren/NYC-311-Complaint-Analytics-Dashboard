@@ -43,6 +43,17 @@ import type {
 } from "./types";
 import type { GeoPoint } from "@/types";
 
+/**
+ * Top-level controller for the cluster map. Owns the Leaflet map instance,
+ * the marker cluster group, and all supporting services (data fetching,
+ * icon/popup creation, marker lifecycle).
+ *
+ * Typical usage:
+ *   const ctrl = new MapController(callbacks);
+ *   await ctrl.mount(containerElement);
+ *   // later...
+ *   ctrl.destroy();
+ */
 export class MapController {
   private iconFactory: IconFactory;
   private popupFactory: PopupFactory;
@@ -53,7 +64,9 @@ export class MapController {
   private cluster: MarkerClusterGroup | null = null;
   private clusterPane: HTMLElement | null = null;
 
+  // background refresh that re-fetches points on a fixed interval
   private refreshTimer: IntervalTimer | null = null;
+  // used when polling for live data while the API is still empty
   private pollTimer: TimeoutTimer | null = null;
 
   private debouncedRefresh: DebouncedFn<() => void> | null = null;
@@ -79,6 +92,11 @@ export class MapController {
     });
   }
 
+  /**
+   * Initialise the Leaflet map inside `container` and kick off the first data load.
+   * Leaflet and its CSS are imported dynamically so they don't bloat the initial bundle.
+   * Safe to call after destroy() — will no-op if already disposed.
+   */
   async mount(container: HTMLElement): Promise<void> {
     if (this.map) return;
 
@@ -92,6 +110,8 @@ export class MapController {
 
     if (this.isDisposed) return;
 
+    // Leaflet leaves a _leaflet_id on the DOM node after unmount; clear it so
+    // re-mounting into the same element doesn't throw.
     const leafletContainer = container as LeafletContainer;
     if (leafletContainer._leaflet_id) {
       leafletContainer._leaflet_id = undefined;
@@ -105,6 +125,7 @@ export class MapController {
     this.cluster = toMarkerClusterGroup(L.markerClusterGroup(CLUSTER_OPTIONS));
     this.map.addLayer(this.cluster);
 
+    // grab the pane so we can fade it in/out during zoom transitions
     this.clusterPane = this.cluster.getPane() ?? null;
     if (this.clusterPane) this.clusterPane.style.transition = PANE_TRANSITION_EASE;
 
@@ -113,6 +134,10 @@ export class MapController {
     this.refreshTimer = setInterval(() => this.loadPoints(), REFRESH_INTERVAL);
   }
 
+  /**
+   * Tear down the map and cancel all pending work (timers, fetches, debounces).
+   * Safe to call multiple times.
+   */
   destroy(): void {
     this.isDisposed = true;
     if (this.refreshTimer) clearInterval(this.refreshTimer);
@@ -137,6 +162,10 @@ export class MapController {
     this.map?.zoomOut();
   }
 
+  /**
+   * Snap the map back to the default NYC view and zoom level.
+   * Cancels any in-progress animation or debounced refresh first.
+   */
   resetView(): void {
     if (!this.map) return;
     this.map.stop();
@@ -146,16 +175,22 @@ export class MapController {
     this.map.setView(NYC_CENTER, MIN_ZOOM, RESET_VIEW_OPTIONS);
   }
 
+  /** Toggle between mock and live data, then reload markers. */
   setUseMock(value: boolean): void {
     this.dataService.setUseMock(value);
     this.reload();
   }
 
+  //Apply new filter params and reload markers from scratch
   applyFilters(params: FilterParams): void {
     this.filters = params;
     this.reload();
   }
 
+  /**
+   * Clear all markers and re-fetch points with the current filters.
+   * Cancels any in-flight request before starting a new one.
+   */
   reload(): void {
     this.dataService.cancelPending();
     this.callbacks.onLoadingChange(true);
@@ -178,6 +213,10 @@ export class MapController {
     return this.dataService.getUseMock();
   }
 
+  /**
+   * Switch from mock data to the live API. Clears the poll timer, cancels
+   * pending fetches, reloads markers, then restarts the background refresh interval.
+   */
   async switchToLive(): Promise<void> {
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
@@ -199,6 +238,11 @@ export class MapController {
     this.refreshTimer = setInterval(() => this.loadPoints(), REFRESH_INTERVAL);
   }
 
+  /**
+   * Periodically probe the live API until it returns at least one result,
+   * then automatically switch out of mock mode.
+   * Retries every TEN_SECONDS; stops as soon as live data is available.
+   */
   private pollForLiveData(): void {
     const poll = async () => {
       if (this.isDisposed) return;
@@ -221,6 +265,12 @@ export class MapController {
     setTimeout(poll, TEN_SECONDS);
   }
 
+  /**
+   * Count how many complaints are currently visible in the viewport
+   * and emit the result via onViewportCountChange.
+   * Walks the cluster's feature group and sums child counts for clusters
+   * and individual markers that fall within the current map bounds.
+   */
   private emitViewportCount(): void {
     let count = 0;
 
@@ -248,6 +298,11 @@ export class MapController {
     this.callbacks.onViewportCountChange?.(count);
   }
 
+  /**
+   * Attach all Leaflet map and cluster event listeners.
+   * Handles cluster clicks, zoom transitions, pan/move end, and the
+   * debounced icon re-rank that runs after the user stops panning.
+   */
   private bindMapEvents(L: typeof import("leaflet")): void {
     if (!this.map || !this.cluster) return;
 
@@ -317,6 +372,10 @@ export class MapController {
     });
   }
 
+  /**
+   * Filter the raw point list on the client side using the current filter params.
+   * Returns the original array unchanged if no filters are active.
+   */
   private applyClientFilters(points: GeoPoint[]): GeoPoint[] {
     const { borough, complaintType, status, dateFrom, dateTo } = this.filters;
     if (!borough && !complaintType && !status && !dateFrom && !dateTo) return points;
@@ -332,6 +391,11 @@ export class MapController {
     });
   }
 
+  /**
+   * Recompute cluster icon tiers based on what's currently visible,
+   * then tell Leaflet to re-render all cluster icons.
+   * Skipped while an animation is in progress to avoid visual glitches.
+   */
   private refreshClusterIcons(): void {
     if (!this.cluster || !this.map || this.isAnimating) return;
     const counts = MarkerManager.collectVisibleClusterCounts(this.cluster, this.map);
@@ -340,11 +404,19 @@ export class MapController {
     this.cluster.refreshClusters();
   }
 
+  /**
+   * Fire the onLoadingChange(false) callback, but wait at least MIN_LOAD_MS
+   * from when the load started to avoid a loading bar flash on fast responses.
+   */
   private finishLoading(): void {
     const elapsed = Date.now() - this.loadStartedAt;
     setTimeout(() => this.callbacks.onLoadingChange(false), Math.max(0, MIN_LOAD_MS - elapsed));
   }
 
+  /**
+   * Apply client-side filters to raw points, hand them off to MarkerManager
+   * to diff and update the cluster layer, then finish the loading state.
+   */
   private async renderLoadedPoints(raw: GeoPoint[], isInitialLoad: boolean): Promise<void> {
     const points = this.applyClientFilters(raw);
     this.callbacks.onPointsChange?.(this.totalComplaintCount, points.length);
@@ -364,6 +436,11 @@ export class MapController {
     this.finishLoading();
   }
 
+  /**
+   * First data load after mount. Races the fetch against a 15-second timeout —
+   * if no data comes back in time (or the API is empty), falls back to mock data
+   * and starts polling for live data in the background.
+   */
   private async initialLoad(): Promise<void> {
     this.loadStartedAt = Date.now();
 
@@ -381,12 +458,14 @@ export class MapController {
       return;
     }
 
+    // only store the total count when no filters are active
     const hasFilters = Object.values(this.filters).some(Boolean);
     if (!hasFilters) this.totalComplaintCount = raw.length;
 
     await this.renderLoadedPoints(raw, true);
   }
 
+  /** Fetch the latest points and update markers. Silently no-ops if the request was cancelled. */
   private async loadPoints(): Promise<void> {
     this.loadStartedAt = Date.now();
     const raw = await this.dataService.fetchPoints(this.filters);
@@ -395,6 +474,10 @@ export class MapController {
     await this.renderLoadedPoints(raw, false);
   }
 
+  /**
+   * Returns a debounced version of `fn` that delays execution by `ms`.
+   * The returned function has a `.cancel()` method to clear the pending call.
+   */
   static debounce<T extends AnyVoidFn>(fn: T, ms: number): DebouncedFn<T> {
     let id: TimeoutTimer | null = null;
     const debounced = (...args: Parameters<T>) => {

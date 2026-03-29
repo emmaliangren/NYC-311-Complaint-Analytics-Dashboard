@@ -1,14 +1,21 @@
 package com.example.repository;
 
-import com.example.entity.Complaint;
 import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.example.entity.Complaint;
+
+// Data access layer for complaints. Extends JpaSpecificationExecutor to support
+// dynamic filter queries built with ComplaintSpecification.
 public interface ComplaintRepository
     extends JpaRepository<Complaint, String>, JpaSpecificationExecutor<Complaint> {
+
+   // --- Filter option queries ---
+  // These return distinct values used to populate the frontend filter dropdowns.
 
   @Query("SELECT DISTINCT c.complaintType FROM Complaint c ORDER BY c.complaintType")
   List<String> findDistinctComplaintTypes();
@@ -22,6 +29,13 @@ public interface ComplaintRepository
   @Query("SELECT DISTINCT a.name FROM Complaint c JOIN c.agency a ORDER BY a.name")
   List<String> findDistinctAgencyNames();
 
+    // --- Resolution time queries ---
+  // These return raw [agencyName (String), resolutionMinutes (Number)] rows.
+  // The median is computed in ResolutionTimeController rather than in SQL
+  // to remain compatible with databases that don't support a native MEDIAN function.
+  // Only closed complaints (closed_date IS NOT NULL) are included.
+
+  // Returns resolution minutes for all agencies.
   @Query(
       value =
           """
@@ -54,6 +68,9 @@ public interface ComplaintRepository
       nativeQuery = true)
   List<Object[]> findResolutionMinutesByAgency();
 
+  
+  // Unused native-query variant that computes the median in SQL via a window function.
+  // Kept for reference but not wired up; requires a database that supports MEDIAN() + OVER().
   @Query(
       value =
           """
@@ -105,10 +122,13 @@ public interface ComplaintRepository
   @Query("SELECT COUNT(c) FROM Complaint c")
   long countAllComplaints();
 
+   // Complaint count per borough, ordered alphabetically
+  // Each row: [borough (String), count (Number)]
   @Query("SELECT c.borough, COUNT(c) FROM Complaint c GROUP BY c.borough ORDER BY c.borough")
   List<Object[]> countComplaintsByBorough();
 
+   // Complaint count per agency, ordered alphabetically
+  // Each row: [agencyName (String), count (Number)]
   @Query("SELECT a.name, COUNT(c) FROM Complaint c JOIN c.agency a GROUP BY a.name ORDER BY a.name")
   List<Object[]> countComplaintsByAgency();
 }
-

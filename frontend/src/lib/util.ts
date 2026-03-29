@@ -4,27 +4,32 @@ import { COMPLAINT_TYPES, NEIGHBOURHOODS, STATUSES, TOTAL_MOCK_POINTS } from "./
 import type { GeoPoint } from "@/types/geopoints";
 import { AGENCIES } from "./agency";
 
+/** Log an unknown error value as a string — safe to call with anything thrown. */
 export const logError = (error: unknown) => {
   console.error(getError(error));
 };
 
+/** Log an unknown warning value as a string. */
 export const logWarning = (error: unknown) => {
   console.error(getError(error));
 };
-
+/** Extract a readable message from an unknown thrown value. */
 export const getError = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
 };
 
+/** Merge Tailwind class names, resolving conflicts via tailwind-merge. */
 export const cn = (...inputs: ClassValue[]): string => {
   return twMerge(clsx(inputs));
 };
 
+/** Format an ISO timestamp as a localised time string (e.g. "02:30 PM"). */
 export const formatTime = (iso: string): string => {
   const d = new Date(iso);
   return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 };
 
+/** Format an ISO timestamp as a short date string (e.g. "Mar 5, 2025"). */
 export const formatDate = (iso: string): string => {
   const d = new Date(iso);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -33,10 +38,12 @@ export const formatDate = (iso: string): string => {
 // seeded PRNG (mulberry32) for deterministic mock data
 let _seed = 42;
 
+/** Reset the PRNG seed. Call before generating mock data to get a consistent result. */
 export const resetSeed = (s = 42) => {
   _seed = s;
 };
 
+/** Return the next pseudo-random float in [0, 1) from the seeded PRNG. */
 export const rng = (): number => {
   _seed = (_seed + 0x6d2b79f5) | 0;
   let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
@@ -44,16 +51,19 @@ export const rng = (): number => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
 
+/** Box-Muller transform — returns a normally distributed value with the given stddev. */
 export const gauss = (stddev: number): number => {
   const u = 1 - rng();
   const v = rng();
   return stddev * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 };
 
+/** Pick a random element from an array using the seeded PRNG. */
 export const pick = <T>(arr: readonly T[]): T => {
   return arr[Math.floor(rng() * arr.length)];
 };
 
+/** Return a random date string (YYYY-MM-DD) between Sep 2024 and Mar 2025. */
 export const randomDate = (): string => {
   const now = new Date("2025-03-05");
   const past = new Date("2024-09-01");
@@ -61,6 +71,8 @@ export const randomDate = (): string => {
   return new Date(ms).toISOString().slice(0, 10);
 };
 
+// weighted random neighbourhood picker — higher-weight areas appear more often,
+// matching real-world complaint density distribution
 const totalWeight = NEIGHBOURHOODS.reduce((s, n) => s + n.weight, 0);
 const pickNeighbourhood = () => {
   let r = rng() * totalWeight;
@@ -73,6 +85,12 @@ const pickNeighbourhood = () => {
 
 let _mockPoints: GeoPoint[] | null = null;
 
+/**
+ * Generate (or return the cached) full set of mock GeoPoints.
+ * Points are spatially distributed across NYC neighbourhoods with realistic
+ * spread, occasional outliers, and a small percentage of co-located points
+ * to exercise the cluster spiderfy behaviour.
+ */
 export const getMockPoints = (): GeoPoint[] => {
   if (_mockPoints) return _mockPoints;
   resetSeed();

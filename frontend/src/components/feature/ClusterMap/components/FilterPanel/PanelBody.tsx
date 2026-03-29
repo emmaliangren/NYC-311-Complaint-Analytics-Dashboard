@@ -10,6 +10,11 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "active", label: "Active" },
 ];
 
+/**
+ * The expanded panel body. Renders two tabs:
+ * - "Filters" — shows the filter controls passed in as children
+ * - "Active" — shows applied filters, a collapsible summary, and a reset button
+ */
 const PanelBody = ({
   isExpanded,
   activeTab,
@@ -85,6 +90,7 @@ const PanelBody = ({
 
 export default PanelBody;
 
+/** Shows filtered count (when filters are active) and the current viewport count */
 const Summary = ({ filteredCount, viewportCount }: SummaryProps) => {
   const { activeEntries } = useFilters();
   return (
@@ -107,6 +113,7 @@ const Summary = ({ filteredCount, viewportCount }: SummaryProps) => {
   );
 };
 
+/** Hide button and reset-all button shown at the bottom of both tabs */
 const PanelFooter = ({ onHide }: { onHide: () => void }) => {
   const { activeEntries, reset: _reset } = useFilters();
   return (
@@ -129,6 +136,7 @@ interface ResetButtonProps {
   isExpanded: boolean;
 }
 
+/** Calls the filter context reset. Disabled when no filters are active */
 export const ResetButton = ({ isExpanded }: ResetButtonProps) => {
   const { reset } = useFilters();
   return (

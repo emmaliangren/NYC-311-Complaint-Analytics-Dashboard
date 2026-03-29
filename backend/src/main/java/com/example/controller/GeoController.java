@@ -1,19 +1,22 @@
 package com.example.controller;
 
-import com.example.dto.ComplaintGeoPointDto;
-import com.example.dto.FilterOptionsDto;
-import com.example.entity.Complaint;
-import com.example.repository.ComplaintRepository;
-import com.example.specification.ComplaintSpecification;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.dto.ComplaintGeoPointDto;
+import com.example.dto.FilterOptionsDto;
+import com.example.entity.Complaint;
+import com.example.repository.ComplaintRepository;
+import com.example.specification.ComplaintSpecification;
+
+// Serves complaint geo-point data and filter options used by the frontend map.
 @RestController
 @RequestMapping("/api/complaints")
 public class GeoController {
@@ -24,6 +27,9 @@ public class GeoController {
     this.complaintRepository = complaintRepository;
   }
 
+    // Returns complaints that have coordinates, optionally filtered by any combination of
+  // complaintType, borough, status, agency, and date range. All filters are optional and
+  // are AND-ed together. Only complaints with non-null lat/lng are included.
   @GetMapping("/geopoints")
   public List<ComplaintGeoPointDto> getGeoPoints(
       @RequestParam Optional<String> complaintType,
@@ -33,6 +39,7 @@ public class GeoController {
       @RequestParam Optional<LocalDate> dateFrom,
       @RequestParam Optional<LocalDate> dateTo) {
 
+    // Always require coordinates; additional filters are appended if present
     Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasCoordinates());
 
     if (complaintType.isPresent()) {
@@ -57,6 +64,7 @@ public class GeoController {
     return complaintRepository.findAll(spec).stream().map(this::toDto).toList();
   }
 
+    // Returns all distinct values for each filter dimension, used to populate the frontend filter UI.
   @GetMapping("/filter-options")
   public FilterOptionsDto getFilterOptions() {
     return new FilterOptionsDto(
@@ -66,6 +74,9 @@ public class GeoController {
         complaintRepository.findDistinctAgencyNames());
   }
 
+  // Maps a Complaint entity to a lightweight DTO for map rendering.
+  // createdDate is converted to a plain date string (no time component) for frontend simplicity.
+  // agencyName is null-safe since agency is an optional relationship.
   private ComplaintGeoPointDto toDto(Complaint c) {
     String createdDate =
         c.getCreatedDate() != null ? c.getCreatedDate().toLocalDate().toString() : null;

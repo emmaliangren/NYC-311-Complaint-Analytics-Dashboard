@@ -11,13 +11,16 @@ export class IconFactory {
   private clusterCache = new Map<string, L.DivIcon>();
   private markerCache = new Map<string, L.DivIcon>();
 
+  // tier cutoffs — recomputed by computeRankCutoffs() after each viewport change
   private redMin = Infinity;
   private yellowMin = Infinity;
 
+  //Clear only the cluster icon cache — called before re-ranking so stale tiers aren't reused
   clearClusterCache(): void {
     this.clusterCache.clear();
   }
 
+  //Clear both caches — called on full reload or destroy
   clearAll(): void {
     this.clusterCache.clear();
     this.markerCache.clear();
@@ -88,16 +91,19 @@ export class IconFactory {
 
   // helpers
 
+  /** Map a cluster count to its colour tier using the precomputed cutoffs */
   private getTier(count: number): ClusterTier {
     if (count >= this.redMin) return CLUSTER_TIERS.red;
     if (count >= this.yellowMin) return CLUSTER_TIERS.yellow;
     return CLUSTER_TIERS.green;
   }
 
+  /** Format large counts as "1.2k" to keep cluster labels readable */
   private fmt(n: number): string {
     return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`;
   }
 
+  /** Build and cache a marker DivIcon for the given fill colour and hover state */
   private buildMarkerIcon(fill: string, hovered: boolean): L.DivIcon {
     const key = `${fill}:${hovered ? 1 : 0}`;
     const cached = this.markerCache.get(key);
