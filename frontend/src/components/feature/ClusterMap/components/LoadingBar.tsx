@@ -2,6 +2,9 @@ interface LoadingBarProps {
   isVisible: boolean;
 }
 
+/**
+ * Simple top-aligned animated progress bar for indicating background loading
+ */
 const LoadingBar = ({ isVisible }: LoadingBarProps) => {
   if (!isVisible) return null;
   return (

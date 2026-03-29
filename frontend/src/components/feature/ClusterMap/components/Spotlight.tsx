@@ -21,13 +21,28 @@ interface SpotlightTipProps {
 const btn =
   "flex-1 rounded text-[11px] font-medium py-1.5 cursor-pointer transition-colors border-none";
 
+/**
+ * A multi-step walkthrough tooltip that portals into document.body.
+ *
+ * Shows a pulsing dot over targetRef to signal there's a new feature.
+ * Clicking it opens a popup with step-by-step instructions. Each step can
+ * optionally highlight a specific element via highlightSelector and run a
+ * side-effect via onEnter (e.g. opening a panel before the step is shown)
+ *
+ * Once dismissed, a flag is written to localStorage under spotlight-tip:{id}
+ * so  tip doesn't re-appear on future visits
+ */
 const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: SpotlightTipProps) => {
+  // hide permanently if the user has already dismissed this tip
   const [visible, setVisible] = useState(() => !localStorage.getItem(`spotlight-tip:${id}`));
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  // bounding rect of the targetRef element — used to position the popup
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // bounding rect of the currently highlighted element for the backdrop cutout
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
 
+  // recompute the target element's position on demand
   const updateRect = useCallback(() => {
     if (targetRef.current) setRect(targetRef.current.getBoundingClientRect());
   }, [targetRef]);
@@ -37,6 +52,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     onOpenChange(false);
   }, [onOpenChange]);
 
+  // resolve the highlight element's rect from a CSS selector, or clear it if none
   const updateHighlightRect = useCallback((selector?: string) => {
     if (!selector) {
       setHighlightRect(null);
@@ -47,6 +63,8 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     else setHighlightRect(null);
   }, []);
 
+  // keep the popup position in sync with the target element across resizes/scrolls.
+  // multiple timeouts are used because the DOM may not have settled immediately.
   useEffect(() => {
     if (!visible) return;
     const timers = [100, 500, 1000].map((ms) => setTimeout(updateRect, ms));
@@ -62,6 +80,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     };
   }, [visible, targetRef, updateRect]);
 
+  // update the highlight rect after step transitions, with retries for async DOM updates
   useEffect(() => {
     if (!open) return;
     const selector = steps[step]?.highlightSelector;
@@ -69,6 +88,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     return () => timers.forEach(clearTimeout);
   }, [step, open, steps, updateHighlightRect]);
 
+  // close the walkthrough on Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -78,6 +98,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
+  /** Persist dismissal to localStorage and tear down the tip. */
   const dismiss = () => {
     localStorage.setItem(`spotlight-tip:${id}`, "1");
     setVisible(false);
@@ -85,6 +106,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     close();
   };
 
+  /** Start the walkthrough from step 0, running any onEnter side-effect */
   const openWalkthrough = () => {
     setStep(0);
     steps[0]?.onEnter?.();
@@ -92,6 +114,7 @@ const SpotlightTip = ({ id, targetRef, steps, onOpenChange, onDismiss }: Spotlig
     onOpenChange(true);
   };
 
+  /** Navigate to a specific step and run its onEnter side-effect */
   const goToStep = (next: number) => {
     steps[next]?.onEnter?.();
     setStep(next);

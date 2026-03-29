@@ -36,6 +36,7 @@ export class MarkerManager {
     return this.geoPointMap.get(marker);
   }
 
+  /** Remove all tracked markers. Does not touch the cluster layer — callers must do that. */
   clear(): void {
     this.markers.clear();
   }
@@ -63,6 +64,7 @@ export class MarkerManager {
       const colourByStatus = this.callbacks.getColourByStatus();
 
       const processChunk = () => {
+        // if a newer buildMarkers call has started, abandon this one
         if (generation !== this.buildGeneration) {
           resolve();
           return;
@@ -104,6 +106,7 @@ export class MarkerManager {
 
   // helpers
 
+  /** Create a new Leaflet marker for a GeoPoint and attach its event handlers */
   private createMarker(p: GeoPoint, colourByStatus: boolean): L.Marker {
     const icons = this.iconFactory.getMarkerIcons(p.status, colourByStatus);
     const marker = L.marker([p.latitude, p.longitude], { icon: icons.normal });
@@ -112,6 +115,11 @@ export class MarkerManager {
     return marker;
   }
 
+  /**
+   * Bind hover, mouseout, and click events to a marker.
+   * The popup is created lazily on first hover to avoid building HTML for
+   * every marker upfront
+   */
   private bindMarkerEvents(marker: L.Marker, p: GeoPoint): void {
     let popupBound = false;
 
@@ -142,6 +150,11 @@ export class MarkerManager {
     });
   }
 
+  /**
+   * Diff the current marker set against the next one and apply the min
+   * set of cluster layer mutations (removeLayers / addLayers)
+   * Then re-ranks cluster icons for the new viewport state
+   */
   private diffAndApply(
     cluster: L.MarkerClusterGroup,
     map: L.Map,
@@ -161,6 +174,7 @@ export class MarkerManager {
     this.refreshRankedIcons(cluster, map);
   }
 
+  /** Recompute icon tier cutoffs from visible cluster counts and re-render cluster icons. */
   private refreshRankedIcons(cluster: L.MarkerClusterGroup, map: L.Map): void {
     const counts = MarkerManager.collectVisibleClusterCounts(cluster, map);
     this.iconFactory.clearClusterCache();
@@ -170,10 +184,16 @@ export class MarkerManager {
 
   // utils
 
+  /** Stable string key for a marker — used to detect duplicates across builds. */
   static markerKey(lat: number, lng: number, type: string): string {
     return `${lat.toFixed(6)},${lng.toFixed(6)},${type}`;
   }
 
+  /**
+   * Walk the cluster's internal feature group and collect child counts
+   * for every visible cluster in the current map bounds
+   * Used to compute icon tier cutoffs
+   */
   static collectVisibleClusterCounts(cg: L.MarkerClusterGroup, map: L.Map): number[] {
     const counts: number[] = [];
     let bounds: L.LatLngBounds;

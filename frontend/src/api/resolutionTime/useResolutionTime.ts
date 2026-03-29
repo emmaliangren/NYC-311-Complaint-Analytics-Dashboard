@@ -3,6 +3,14 @@ import { useState, useEffect } from "react";
 import { parseResolutionTime } from "@/lib/agency";
 import { ENDPOINTS } from "@/lib/api.constants";
 
+/**
+ * Fetch resolution time data from the API, optionally scoped to a single agency
+ * Re-fetches whenever `agency` changes. Cancels the in-flight request if the
+ * component unmounts or `agency` changes before the response arrives
+ *
+ * Filters out rows where medianMinutes is 0 those indicate missing data
+ * and would skew the chart
+ */
 export const useResolutionTime = (agency: Agency | undefined): UseResolutionTimeResult => {
   const [data, setData] = useState<ResolutionTimeDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +23,7 @@ export const useResolutionTime = (agency: Agency | undefined): UseResolutionTime
       setIsLoading(true);
       setIsError(false);
       try {
+        // append the agency query param when filtering by a specific agency
         const url = agency
           ? `${ENDPOINTS.resolutionTime}?agency=${encodeURIComponent(agency)}`
           : ENDPOINTS.resolutionTime;

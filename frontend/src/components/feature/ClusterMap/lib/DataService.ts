@@ -2,6 +2,10 @@ import { fetchGeoPoints, fetchGeoPointsMock } from "@/lib/api";
 import type { GeoPoint } from "@/types/geopoints";
 import type { FilterParams } from "./types";
 
+/**
+ * Handles data fetching for the map. Wraps the geopoints API calls and
+ * manages request cancellation so only one fetch is in-flight at a time.
+ */
 export class DataService {
   private abortController: AbortController | null = null;
   private useMock: boolean;
