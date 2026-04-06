@@ -2,11 +2,17 @@
 
 An interactive map-based dashboard for NYC 311 complaint data, highlighting trends, resolution times, and service hotspots. It enables users to explore patterns and identify areas requiring attention.
 
+A full walkthrough of the app's features is available in the [video demo](https://youtu.be/4cJG7wr_GVs).
+
 ## Features
 
 - **Interactive map**: clustered markers across NYC with zoom, pan, and popup details
 - **Complaint filtering**: filter by borough, complaint type, status, and date range directly on the map
+- **Dashboard overview**: stat boxes showing total complaints, agency with fewest and most complaints, complaints by borough pie chart, and complaints by agency bar chart
+- **Resolution Times chart**: median complaint resolution time per agency with department filter
+- **Complaint Volumes chart**: multi-line time series showing complaint volume by type over a 12-month period
 - **Auto-refresh**: data reloads on a configurable interval with a "Last updated" indicator
+- **Live data pipeline**: Python ingestor continuously streams from the NYC Open Data API into a MariaDB database on a configurable schedule
 
 ## Prerequisites
 
